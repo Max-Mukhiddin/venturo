@@ -49,9 +49,19 @@ const productSchema = new Schema(
 
     productViews: {
         type: Number,
-        default: 0, 
+        default: 0,
     },
-  
+
+    averageRating: {
+        type: Number,
+        default: 0,
+    },
+
+    reviewCount: {
+        type: Number,
+        default: 0,
+    },
+
   },
   { timestamps: true } // updatedAt, createdAt
 );

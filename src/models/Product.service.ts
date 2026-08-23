@@ -1,5 +1,5 @@
 import { shapeIntoMongooseIdObjectId } from "../libs/config";
-import { ProductStatus } from "../libs/enums/product.enum";
+import { ProductSortBy, ProductStatus } from "../libs/enums/product.enum";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import { T } from "../libs/types/common";
 import {
@@ -9,6 +9,7 @@ import {
   ProductUpdateInput,
 } from "../libs/types/product";
 import ProductModel from "../schema/Product.model";
+import ReviewModel from "../schema/Review.model";
 import { ObjectId } from "mongoose";
 import ViewService from "./View.service";
 import { ViewInput } from "../libs/types/view";
@@ -33,10 +34,21 @@ class ProductService {
       match.productName = { $regex: new RegExp(inquiry.search, "i") };
     }
 
-    const sort: T =
-      inquiry.order === "productPrice"
-        ? { [inquiry.order]: 1 }
-        : { [inquiry.order]: -1 };
+    const sortField = (
+      Object.values(ProductSortBy) as string[]
+    ).includes(inquiry.order)
+      ? (inquiry.order as ProductSortBy)
+      : ProductSortBy.CREATED_AT;
+
+    const defaultDirection = sortField === ProductSortBy.PRODUCT_PRICE ? 1 : -1;
+    const direction =
+      inquiry.sortDirection === "ASC"
+        ? 1
+        : inquiry.sortDirection === "DESC"
+        ? -1
+        : defaultDirection;
+
+    const sort: T = { [sortField]: direction };
 
     const result = await this.productModel
       .aggregate([
@@ -123,6 +135,26 @@ class ProductService {
 
     console.log("result:", result);
     return result;
+  }
+
+  public async recalculateRating(productId: ObjectId): Promise<void> {
+    const result = await ReviewModel.aggregate([
+      { $match: { productId: shapeIntoMongooseIdObjectId(productId) } },
+      {
+        $group: {
+          _id: "$productId",
+          averageRating: { $avg: "$rating" },
+          reviewCount: { $sum: 1 },
+        },
+      },
+    ]).exec();
+
+    const averageRating = result[0]?.averageRating ?? 0;
+    const reviewCount = result[0]?.reviewCount ?? 0;
+
+    await this.productModel
+      .findByIdAndUpdate(productId, { averageRating, reviewCount })
+      .exec();
   }
 }
 

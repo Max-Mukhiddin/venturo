@@ -14,12 +14,19 @@ const orderSchema = new Schema(
     orderStatus: {
       type: String,
       enum: OrderStatus,
-      default: OrderStatus.PAUSE,
+      default: OrderStatus.PENDING,
     },
     memberId: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "Member",
+    },
+    shippingAddress: {
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      zip: { type: String, required: true },
+      country: { type: String, required: true },
     },
   },
   { timestamps: true }

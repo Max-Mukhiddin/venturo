@@ -4,7 +4,11 @@ import { T } from "../libs/types/common";
 import { ExtendedRequest } from "../libs/types/member";
 import OrderService from "../models/Order.service";
 import { OrderStatus } from "../libs/enums/order.enum";
-import { OrderInquiry, OrderUpdateInput } from "../libs/types/order";
+import {
+  CreateOrderInput,
+  OrderInquiry,
+  OrderUpdateInput,
+} from "../libs/types/order";
 
 const orderService = new OrderService();
 const orderController: T = {};
@@ -12,7 +16,8 @@ const orderController: T = {};
 orderController.createOrder = async (req: ExtendedRequest, res: Response) => {
   try {
     console.log("createOrder");
-    const result = await orderService.createOrder(req.member, req.body);
+    const input: CreateOrderInput = req.body;
+    const result = await orderService.createOrder(req.member, input);
 
     res.status(HttpCode.CREATED).json({ result });
   } catch (err) {

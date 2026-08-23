@@ -3,6 +3,7 @@ import { OrderStatus } from "../libs/enums/order.enum";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import { Member } from "../libs/types/member";
 import {
+  CreateOrderInput,
   Order,
   OrderInquiry,
   OrderItemInput,
@@ -26,10 +27,11 @@ class OrderService {
 
   public async createOrder(
     member: Member,
-    input: OrderItemInput[]
+    input: CreateOrderInput
   ): Promise<Order> {
     const memberId = shapeIntoMongooseIdObjectId(member._id);
-    const amount = input.reduce((accumulator: number, item: OrderItemInput) => {
+    const { shippingAddress, items } = input;
+    const amount = items.reduce((accumulator: number, item: OrderItemInput) => {
       return accumulator + item.itemPrice * item.itemQuantity;
     }, 0);
     const delivery = amount < 100 ? 5 : 0;
@@ -38,11 +40,12 @@ class OrderService {
         orderTotal: amount + delivery,
         orderDelivery: delivery,
         memberId: memberId,
+        shippingAddress: shippingAddress,
       });
 
       console.log("orderId", newOrder._id);
       const orderId = newOrder._id;
-      await this.recordOrderItem(orderId, input);
+      await this.recordOrderItem(orderId, items);
 
       return newOrder;
     } catch (err) {

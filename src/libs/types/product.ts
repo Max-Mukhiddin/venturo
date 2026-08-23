@@ -13,12 +13,15 @@ export interface Product {
     productDesc?: string;
     productImages: string[];
     productViews: number;
+    averageRating: number;
+    reviewCount: number;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export interface ProductInquiry {
     order: string;
+    sortDirection?: "ASC" | "DESC";
     page: number;
     limit: number;
     productCollection?: ProductCollection;

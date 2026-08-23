@@ -3,6 +3,8 @@ const routerAdmin = express.Router();
 import restaurantController from "./controllers/restaurant.controller";
 import productController from "./controllers/product.controller";
 import makeUploader from "./libs/utils/uploader";
+import articleController from "./controllers/article.controller";
+import contactController from "./controllers/contact.controller";
 
 /** Restaurant **/
 routerAdmin.get("/", restaurantController.goHome);
@@ -54,6 +56,40 @@ routerAdmin.post(
   "/user/edit",
   restaurantController.verifyRestaurant,
   restaurantController.updateChosenUser
+);
+
+/** Article (JSON-only this pass — no EJS views yet) */
+
+routerAdmin.get(
+  "/article/all",
+  restaurantController.verifyRestaurant,
+  articleController.getAllArticlesAdmin
+);
+
+routerAdmin.post(
+  "/article/create",
+  restaurantController.verifyRestaurant,
+  articleController.createNewArticle
+);
+
+routerAdmin.post(
+  "/article/:id",
+  restaurantController.verifyRestaurant,
+  articleController.updateChosenArticle
+);
+
+/** Contact (JSON-only this pass — no EJS views yet) */
+
+routerAdmin.get(
+  "/contact/all",
+  restaurantController.verifyRestaurant,
+  contactController.getAllContactMessages
+);
+
+routerAdmin.post(
+  "/contact/:id",
+  restaurantController.verifyRestaurant,
+  contactController.updateContactMessageStatus
 );
 
 export default routerAdmin;

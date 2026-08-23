@@ -21,3 +21,11 @@ export enum ProductCollection {
     FOOTWEAR = "FOOTWEAR",
     OTHER = "OTHER"
 }
+
+export enum ProductSortBy {
+    CREATED_AT = "createdAt",
+    PRODUCT_PRICE = "productPrice",
+    PRODUCT_VIEWS = "productViews",
+    AVERAGE_RATING = "averageRating",
+    REVIEW_COUNT = "reviewCount"
+}

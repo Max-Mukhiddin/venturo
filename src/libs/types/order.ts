@@ -12,12 +12,21 @@ export interface OrderItem {
   updatedAt: Date;
 }
 
+export interface ShippingAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+}
+
 export interface Order {
   _id: ObjectId;
   orderTotal: number;
   orderDelivery: number;
   orderStatus: OrderStatus;
   memberId: ObjectId;
+  shippingAddress: ShippingAddress;
   createdAt: Date;
   updatedAt: Date;
   //** from aggregations **/
@@ -30,6 +39,11 @@ export interface OrderItemInput {
   itemPrice: number;
   productId: ObjectId;
   orderId?: ObjectId;
+}
+
+export interface CreateOrderInput {
+  shippingAddress: ShippingAddress;
+  items: OrderItemInput[];
 }
 
 export interface OrderInquiry {

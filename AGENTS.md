@@ -50,7 +50,7 @@ decisions, remaining work, and validation status.
 1. Analyze before editing.
 2. Keep changes small and scoped — one numbered task at a time.
 3. Do not remove working logic unless replaced safely.
-4. Update docs/COMPLETED_TASKS.md after each completed pass.
+4. Update docs/ai/COMPLETED_TASKS.md after each completed pass.
 5. Run npx tsc --noEmit after every change.
 
 ## Validation
