@@ -9,7 +9,7 @@ import {
   OrderUpdateInput,
 } from "../libs/types/order";
 import orderModel from "../schema/Order.model";
-import orderItemModel from "../schema/OrderItem.model.";
+import orderItemModel from "../schema/OrderItem.model";
 import { ObjectId } from "mongoose";
 import MemberService from "./Member.service";
 

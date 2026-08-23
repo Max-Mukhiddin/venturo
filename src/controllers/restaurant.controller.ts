@@ -54,7 +54,7 @@ restaurantController.processSignup = async (
 
     const newMember: MemberInput = req.body;
     newMember.memberImage = file?.path.replace(/\\/g, "/");
-    newMember.memberType = MemberType.RESTAURANT;
+    newMember.memberType = MemberType.ADMIN;
     const result = await memberService.processSignup(newMember);
 
     req.session.member = result;
@@ -152,7 +152,7 @@ restaurantController.verifyRestaurant = (
   res: Response,
   next: NextFunction
 ) => {
-  if (req.session?.member?.memberType === MemberType.RESTAURANT) {
+  if (req.session?.member?.memberType === MemberType.ADMIN) {
     req.member = req.session.member;
     next();
   } else {
