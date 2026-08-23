@@ -1,9 +1,9 @@
 import { shapeIntoMongooseIdObjectId } from "../libs/config";
-import { ContactMessageStatus } from "../libs/enums/contact.enum";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import {
   ContactMessage,
   ContactMessageInput,
+  ContactMessageUpdateInput,
 } from "../libs/types/contact";
 import ContactMessageModel from "../schema/ContactMessage.model";
 
@@ -34,14 +34,13 @@ class ContactMessageService {
     return result;
   }
 
-  public async updateMessageStatus(id: string): Promise<ContactMessage> {
+  public async updateMessageStatus(
+    id: string,
+    input: ContactMessageUpdateInput
+  ): Promise<ContactMessage> {
     const messageId = shapeIntoMongooseIdObjectId(id);
     const result = await this.contactMessageModel
-      .findByIdAndUpdate(
-        messageId,
-        { status: ContactMessageStatus.READ },
-        { new: true }
-      )
+      .findByIdAndUpdate(messageId, { status: input.status }, { new: true })
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
     return result;

@@ -29,7 +29,7 @@ const contactMessageSchema = new Schema(
       default: ContactMessageStatus.NEW,
     },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "contactMessages" }
 );
 
 export default mongoose.model("ContactMessage", contactMessageSchema);

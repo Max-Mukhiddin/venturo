@@ -2,6 +2,7 @@ import { shapeIntoMongooseIdObjectId } from "../libs/config";
 import { OrderStatus } from "../libs/enums/order.enum";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import { Member } from "../libs/types/member";
+import { T } from "../libs/types/common";
 import {
   CreateOrderInput,
   Order,
@@ -75,7 +76,8 @@ class OrderService {
     inquiry: OrderInquiry
   ): Promise<Order[]> {
     const memberId = shapeIntoMongooseIdObjectId(member._id);
-    const matches = { memberId: memberId, orderStatus: inquiry.orderStatus };
+    const matches: T = { memberId: memberId };
+    if (inquiry.orderStatus) matches.orderStatus = inquiry.orderStatus;
 
     const result = await this.orderModel
       .aggregate([

@@ -1,5 +1,5 @@
 import { Response } from "express";
-import Errors, { HttpCode } from "../libs/Errors";
+import Errors, { HttpCode, Message } from "../libs/Errors";
 import { T } from "../libs/types/common";
 import { ExtendedRequest } from "../libs/types/member";
 import OrderService from "../models/Order.service";
@@ -31,6 +31,14 @@ orderController.getMyOrders = async (req: ExtendedRequest, res: Response) => {
   try {
     console.log("getMyOrders");
     const { page, limit, orderStatus } = req.query;
+
+    if (
+      orderStatus !== undefined &&
+      !Object.values(OrderStatus).includes(orderStatus as OrderStatus)
+    ) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_ORDER_STATUS);
+    }
+
     const inquiry: OrderInquiry = {
       page: Number(page),
       limit: Number(limit),

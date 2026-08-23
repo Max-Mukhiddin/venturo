@@ -1,7 +1,10 @@
 import { Request, Response } from "express";
 import Errors, { HttpCode } from "../libs/Errors";
 import { T } from "../libs/types/common";
-import { ContactMessageInput } from "../libs/types/contact";
+import {
+  ContactMessageInput,
+  ContactMessageUpdateInput,
+} from "../libs/types/contact";
 import ContactMessageService from "../models/ContactMessage.service";
 
 const contactMessageService = new ContactMessageService();
@@ -47,7 +50,8 @@ contactController.updateContactMessageStatus = async (
   try {
     console.log("updateContactMessageStatus");
     const id = req.params.id;
-    const result = await contactMessageService.updateMessageStatus(id);
+    const input: ContactMessageUpdateInput = req.body;
+    const result = await contactMessageService.updateMessageStatus(id, input);
 
     res.status(HttpCode.OK).json(result);
   } catch (err) {
