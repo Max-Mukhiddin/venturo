@@ -1,9 +1,10 @@
-# Venturo Backend — Working Skills
+# Venturo Backend Skills
 
-## Enum/value changes
-When renaming an enum value, grep for both the enum reference and any bare
-string literal of the old value — some code compares raw strings instead
-of the enum.
+Use these Claude Code skills for repeatable Venturo backend workflows.
 
-## Verification
-Run `npx tsc --noEmit` after every edit round before reporting done.
+| Skill | Purpose |
+| --- | --- |
+| `backend-migration` | Continue the Burak to Venturo backend migration while preserving the current Express/Mongoose architecture. |
+| `product-logic` | Review product REST routes, controllers, services, schemas, enums, filters, and naming consistency. |
+
+Each skill lives at `.claude/skills/<skill-name>/SKILL.md`.
