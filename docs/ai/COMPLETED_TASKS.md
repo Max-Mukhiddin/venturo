@@ -987,3 +987,384 @@ product renders (`qa_pagination_test_5`, `$65`, size `LARGE`, real
 `productDesc`), real Venturo badge visible. Layout is a row ≥900px and a
 column <900px; title visible ≥900px, hidden <900px, matching the
 confirmed mobile frame exactly. Zero page errors.
+
+## Session — Section 10 of 12: Instagram
+
+A row of 6 image tiles (Figma node `2481:1308`, mobile counterpart
+`7:152`). Checked whether this implies a real social-feed integration or
+a product-link gallery before building — resolved cleanly, no
+stop-and-ask needed this time (unlike Banner/Deals/Product Details).
+
+### What was checked
+
+- **Social API integration**: grepped both repos for
+  `instagram`/`social`/`oauth`/API-key patterns. Nothing exists beyond a
+  static Material icon (`userPage/index.tsx`) and a static
+  `/icons/instagram.svg` in the footer, neither wired to any real feed —
+  a live embed isn't buildable here.
+- **Product-link hint**: the design node contains only 6 flat `#d9d9d9`
+  rectangles named after their AdobeStock source files — no text, no
+  captions, no name/price nodes like every real product-card section has
+  (Best Products, Deals Of The Day, Product Details all carry those; this
+  one carries nothing). No hint of a product reference.
+- **Conclusion**: pure decorative lifestyle imagery, same
+  unexported-AdobeStock-placeholder pattern already resolved for
+  Highlights' background and Banner's panels — flat-panel fallback, no
+  fabricated caption/link/product reference.
+- **Mobile frame** (`7:152`, same 6 tile names, same order): confirmed
+  reflow from a single row of 6 to a 3-column, 2-row grid — a genuine
+  structural change, handled at the existing 900px breakpoint.
+- **Layout**: tiles are exactly square at both anchors (303.68px desktop,
+  103.38px mobile, both 1:1) — `aspect-ratio: 1` covers both widths, no
+  clamp needed, same precedent as Banner's panels. Section is genuinely
+  full-bleed in the source (first tile at `left: 0`, no gutter) — matched
+  exactly rather than assumed symmetric with every other section's
+  `var(--vt-gutter)` container padding.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/app/screens/homePage/Instagram.tsx` | New section component — 6 static decorative tiles, no data fetch |
+| `src/app/screens/homePage/index.tsx` | Renders it between `ProductDetails` and `Statistics` (Figma y-order) |
+| `src/css/home.css` | Full-bleed 6-column grid (no `--vt-gutter`/`--vt-content-max`), 900px breakpoint switches to a 3-column grid, matching the confirmed mobile frame |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window — confirmed: 6 tiles in a single row ≥900px, 3×2 grid
+<900px exactly matching the confirmed mobile frame, tiles square
+(`aspect-ratio` 1.000) at every width, section full-bleed (left offset
+0px at every width, unlike every other section), zero text content of
+any kind. Zero page errors.
+
+## Session — Section 11 of 12: Free Shipping
+
+A 4-item trust-badge strip (Figma node `2018:1391`, mobile counterpart
+`2429:101`) — Free Shipping / 100% Secure Payment / 24x7 Customer Service
+/ Free & Easy Returns. One of the more straightforward sections: no
+product/backend data involved.
+
+### What was checked
+
+- **Content vs. real data**: none of the 4 labels claim a specific
+  verifiable fact — no delivery-day count, no named payment provider, no
+  support phone/hours. Generic e-commerce trust-badge copy, the same
+  category as static marketing headings already kept elsewhere (Banner's
+  "New Arrivals"/"Best Sellers"), unlike the specific, dropped "Delivery
+  At 7 days" claim from Sections 4/6. No backend check applies; shipped
+  as literal design copy.
+- **Icons**: real exported SVGs (truck, card+lock, headset+"24", package
+  with a return arrow), not unexported AdobeStock placeholders. Verified
+  each icon visually after downloading — correct shapes, correctly
+  matched to their labels. Downloaded via `download_assets` and saved
+  locally (`public/icons/fs-shipping.svg`, `fs-payment.svg`,
+  `fs-support.svg`, `fs-returns.svg`) rather than linked from Figma's
+  temporary asset CDN, same convention as the Venturo badge.
+- **Mobile frame** (`2429:101`, confirmed via full `get_design_context`):
+  a genuine 2-column, 2-row grid — not the desktop's single row scaled
+  down. Structural change, handled at the existing 900px breakpoint.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/app/screens/homePage/FreeShipping.tsx` | New section component |
+| `src/app/screens/homePage/index.tsx` | Renders it between `Instagram` and `Statistics` (Figma y-order) |
+| `src/css/home.css` | Flex row desktop (`justify-content: space-between`, `var(--vt-gutter)` container), 900px breakpoint switches to a 2×2 grid, matching the confirmed mobile frame |
+| `public/icons/fs-shipping.svg`, `fs-payment.svg`, `fs-support.svg`, `fs-returns.svg` | New real icon assets, downloaded from Figma |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window — confirmed: all 4 icons load correctly at every width,
+row layout ≥900px switches to a 2×2 grid <900px matching the confirmed
+mobile frame exactly, text content matches the design's labels verbatim.
+Zero page errors.
+
+## Session — Section 12 of 12: Footer (final section — 12-section rebuild complete)
+
+Figma node `2012:455` (mobile counterpart `2012:1159`). Rewrote the
+existing `src/app/components/footer/index.tsx` in place (same component,
+same global mount point in `App.tsx`, rendered on every page — not a new
+or duplicate footer) rather than creating a second component, after
+confirming the relationship by reading it directly first.
+
+### What was checked
+
+- **Newsletter signup**: no email-capture endpoint exists anywhere in the
+  backend schema. Form renders as designed; `onSubmit` prevents default
+  and does nothing — no fake "Subscribed!" state. Flagged in
+  `NEXT_STEPS.md`.
+- **Link columns**: real routes confirmed via `App.tsx` (`/`, `/products`,
+  `/checkout`, `/orders`, `/member-page`, `/help`). The design's "Shop"
+  and "Learn" columns are **literally identical content** — confirmed on
+  both the desktop node and the mobile node (`2012:1159`), not a one-off
+  slip. "Care," "Service," "Wholesale," "Sitemap" have no real
+  destination anywhere in the app. "FAQs" does — `/help` has a real FAQ
+  tab (`lib/data/faq.ts`). Consolidated to one real "Shop" column (All
+  Products → `/products`, Trekking/Hiking → deep-linked via the
+  already-fixed `?productCollection=` support) and a trimmed "Help"
+  column (Account → `/member-page`, gated on the real `authMember` from
+  `useGlobals()` — the old footer had this conditional shape but with a
+  hardcoded `null` stub; wiring the real hook is a genuine fix; FAQs →
+  `/help`). "Learn" dropped — no distinct real content. Flagged in
+  `NEXT_STEPS.md`.
+- **Contact info**: raised directly to the user — neither the new mock's
+  `support@stereolabs.com`/`Location: India` nor the *old* footer's own
+  `devexuz@gmail.com`/Dubai address/`+971` phone/"© Devex Global" are
+  real Venturo values (the old ones are literally the template vendor's
+  own identity, predating this rebuild). **Decision: omit specific
+  contact details entirely.** Copyright is now a real, generic
+  "© 2026 Venturo. All rights reserved."
+- **Social icons**: confirmed bare `<img>` tags, no `<a>` wrapper, no
+  `onclick` — decorative-only, matching the pre-existing footer's
+  treatment. Explicitly re-verified live, per instruction, after the
+  rewrite rather than carried forward as an assumption (a full rewrite is
+  exactly where a "kept as-is" detail can silently drift) — confirmed
+  unchanged at all 4 widths.
+- **Back-to-top button**: a real, buildable feature (not fabricated
+  data) — wired to `window.scrollTo({ top: 0, behavior: "smooth" })`.
+  Live-verified: `window.scrollY` reaches exactly `0` after clicking.
+- **Mobile frame** (`2012:1159`, confirmed via full `get_design_context`):
+  genuine structural stack — brand/newsletter/social zone entirely above
+  the nav-columns zone (desktop has them side by side). Handled at the
+  existing 900px breakpoint.
+- **Styled-components**: the old footer used `styled-components`, the
+  only section left doing so — every other section in this rebuild uses
+  a dedicated `.css` file + `className`, including the already-started
+  `src/css/footer.css` for the brand lockup. Migrated fully to match.
+  Also fixed the brand wordmark/tagline still using the old Burak-era
+  gold (`#d7b586`) instead of this rebuild's olive/cream palette —
+  caught visually during verification, not planned upfront.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/app/components/footer/index.tsx` | Full rewrite in place (same component/mount point) |
+| `src/css/footer.css` | Migrated off `styled-components`; brand-lockup rules kept (color-corrected), rest rewritten for the new layout; 900px breakpoint stacks brand/newsletter above nav columns |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window, footer verified at the bottom of a real page (it's
+global, not isolated):
+
+- Zero occurrences of "stereolabs"/"Devex"/"Dubai"/"+971"/"India" text
+  at any width.
+- Zero "Learn" column text; exactly 2 nav columns (Shop, Help).
+- Shop column hrefs confirmed real: `/products`,
+  `/products?productCollection=TREKKING`,
+  `/products?productCollection=HIKING`.
+- Help column confirmed to show only "FAQs" when unauthenticated
+  (Account correctly gated, not shown) — real conditional behavior, not
+  just present in markup.
+- Social icons re-confirmed unwrapped/non-interactive after the rewrite:
+  no `<a>` ancestor, no `onclick`, at all 4 widths.
+- Back-to-top confirmed functional: `scrollY` 9111 → `0`.
+- Subscribe confirmed inert: no fake success/confirmation text appears
+  anywhere on the page after submitting.
+- Layout: row ≥900px, stacked column <900px, matching the confirmed
+  mobile frame exactly.
+
+Zero page errors. **This completes the 12-section homepage rebuild.**
+
+## Session — Remove remaining old Burak-era homepage sections
+
+With the 12-section HikMali rebuild complete, five old Burak-era sections
+still sat between `FreeShipping` and `Footer` — fully superseded or pure
+fabricated/decorative content. Deleted outright (files removed entirely,
+not just unrendered — confirmed no reason for them to come back):
+`Statistics.tsx` (fabricated stats), `PopularDishes.tsx`/`NewDishes.tsx`
+("Fresh Menu," redundant with the real product data Best Products/Deals
+Of The Day already show), `Advertisement.tsx` (literal Burak ad video),
+`Events.tsx` (static stock photos, no real data). `ActiveUsers.tsx` was
+kept — genuinely wired to real backend data
+(`MemberService.getTopUsers()`) with no HikMali equivalent; only needs a
+future restyle, not removal (see `NEXT_STEPS.md`).
+
+### What was checked before deleting
+
+- **Cross-references**: grepped each component name across `src/` —
+  none imported anywhere except `homePage/index.tsx` and their own file
+  (one harmless hit: a code *comment* in `Banner.tsx` mentioning
+  "PopularDishes/NewDishes," not an import). Safe to delete outright.
+- **Redux state**: `retrievePopularDishes`/`retrieveNewDishes`
+  (`selector.ts`) and their backing state/reducers (`slice.ts`,
+  `HomePageState` in `lib/types/screen.ts`) were consumed only by the two
+  deleted components — removed alongside them, not left as dead
+  plumbing. `retrieveTopUsers`/`setTopUsers`/`topUsers` state stay
+  (`ActiveUsers` depends on them).
+- **`index.tsx`'s own fetches**: the `popularDishes`/`newDishes`
+  `ProductService` calls became dead once their consumers were deleted —
+  removed along with the now-unused `ProductService`/`ProductCollection`/
+  `Product` imports. The `member.getTopUsers()` fetch stays.
+- **CSS sharing subtlety in `home.css`**: `ActiveUsers.tsx`'s own
+  `.main` element only had `display`/`flex-direction`/`align-items` from
+  a *scoped* `.active-users-frame .main` rule — its `margin-top: 45px`
+  was actually coming from an **unscoped** `.homepage .main` rule that
+  was really there for `NewDishes.tsx`'s own top-level `.main` element.
+  Deleting that block outright would have silently shifted `ActiveUsers`'
+  spacing. Fixed by folding `margin-top: 45px` directly into
+  `.active-users-frame .main` before removing the unscoped rule.
+  Live-verified: `.main`'s position relative to `.active-users-frame`
+  measured **95px both before and after** the cleanup — byte-for-byte
+  unchanged, not just assumed fine. Similarly, `.cards-frame`/`.card`/
+  `.card:hover`/`.member-nickname`/`.nickname`/`.no-data` (also
+  unscoped, under the old "ACTIVE USERS" CSS comment) are what
+  `ActiveUsers.tsx` actually depends on — kept as-is;
+  `PopularDishes`/`NewDishes`' own more-specific scoped versions of the
+  same class names were removed since only those deleted components used
+  them.
+- **`public/video/burak-ads.mp4`**: only referenced in the now-deleted
+  `Advertisement.tsx`. Confirmed zero remaining references anywhere in
+  `src/` or `public/` after deletion — not assumed. Flagged in
+  `NEXT_STEPS.md` as safe to delete, not deleted in this pass (established
+  orphaned-asset convention).
+- **`lib/data/plans.ts`** (Events' copy source): only consumed by the
+  now-deleted `Events.tsx`. Not in the explicit deletion list; left in
+  place but flagged in `NEXT_STEPS.md` as now-orphaned.
+
+### Files
+
+| File | Change |
+|---|---|
+| `Statistics.tsx`, `PopularDishes.tsx`, `NewDishes.tsx`, `Advertisement.tsx`, `Events.tsx` | Deleted |
+| `homePage/index.tsx` | Removed their imports/JSX/fetches; removed now-unused `ProductService`/`ProductCollection`/`Product` imports |
+| `homePage/slice.ts`, `homePage/selector.ts`, `lib/types/screen.ts` | Removed `popularDishes`/`newDishes` state, reducers, and selectors; `topUsers` untouched |
+| `src/css/home.css` | Removed the `STATISTICS`, `PopularDishes`, `NEW PRODUCTS`, `ADVERTISEMENT`, `EVENTS` blocks; `ACTIVE USERS` block kept with `margin-top` folded in to preserve spacing exactly |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium: zero leftover Burak content text anywhere on the
+page. `homepage`'s direct children, in order:
+`shop-by-category → best-products → home-banner → highlights →
+deals-of-the-day → product-details → instagram-grid → free-shipping →
+active-users-frame` (`Footer` renders separately, outside `.homepage`,
+in `App.tsx`) — confirming the clean `FreeShipping` → `ActiveUsers` →
+`Footer` transition with nothing old in between. `ActiveUsers`' real
+member data still renders (1 real member, `qa_tester_002`), and its
+`.main` spacing measured exactly 95px relative to `.active-users-frame`
+both before and after the cleanup. Zero page errors.
+
+## Session — Rebuild OtherNavbar.tsx to match the HikMali palette/structure
+
+`OtherNavbar` is the header on every non-home route (`/products`,
+`/orders`, `/help`, `/member-page`, `/checkout`) — until now still on
+the old gold/dark Burak styling while `HomeNavbar` (Section 1) was
+already rebuilt, so every page but `/` looked visually inconsistent.
+
+### What was checked before building
+
+- **Real design source, not a guessed variant**: found the actual
+  non-home header via `get_metadata` on the Figma page root, locating
+  the "Shop List" top-level frame (`2458:2`) and its `Header` child node
+  (`2012:153`). Pulled that node's `get_design_context` directly rather
+  than assuming HomeNavbar's structure would just apply. Confirmed: same
+  two-bar structure (35px olive announcement topbar + 75px light `#f5f5f5`
+  main nav) as `HomeNavbar`, just without the homepage-only hero — not a
+  different design.
+- **Nav links**: the design's own labels ("Home | Activity | Equipment |
+  Men's | Women's | Pages") are generic template links with no real
+  routes in this app — same class of problem `HomeNavbar`'s Section 1
+  rebuild already resolved for the homepage nav. Reused that exact same
+  resolution (Home/Products/Orders/My page/Help, Orders and My page
+  gated on `authMember`) rather than re-deciding it, so both headers stay
+  consistent with each other.
+  Icons in the design (search / basket / account, in that order) match
+  what already exists functionally — search links to `/products` (same
+  as `HomeNavbar`'s established resolution: a real destination rather
+  than a decorative, non-functional control), basket and login/avatar
+  are the existing real functionality, fully preserved.
+- **No separate mobile "Shop List" frame** exists in the Figma file
+  (checked — only the `home`/`mob` page variants have paired mobile
+  frames). Since the header content itself is confirmed identical to
+  `HomeNavbar`'s nav portion, reused `HomeNavbar`'s already-established
+  900px breakpoint behavior directly (drop currency selector and text
+  links, shrink icons 24px→17px, shrink badge/wordmark) rather than
+  guessing a new one.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/app/components/headers/OtherNavbar.tsx` | Full rewrite — same topbar+nav structure as `HomeNavbar`, same props/functionality preserved exactly (search, basket, auth menu, login) |
+| `src/css/navbar.css` | Replaced the old `.other-navbar` block (gold palette, `banner.webp` background, blue login button) with rules mirroring `.home-navbar`'s `hm-*` classes, re-scoped under `.other-navbar`; same 900px breakpoint treatment |
+
+`public/img/banner.webp` (the old header background) is now orphaned —
+its only reference was the deleted CSS rule. Flagged in
+`docs/ai/NEXT_STEPS.md` as safe to delete, not deleted in this pass, per
+the established orphaned-asset convention.
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, real routes (not just isolated) — `/products`
+and `/help` — full width matrix plus the real measured 1440×719 window:
+
+- Topbar background confirmed `rgb(112, 114, 98)` (`#707262`) at every
+  width on both routes — real HikMali olive, not the old gold/dark.
+  Zero occurrences of old Burak leftovers ("Devex", `banner.webp`).
+- Real link set renders and auth-gates correctly: `Home | Products |
+  Help` while unauthenticated (Orders/My page correctly absent), with
+  the current route's link showing the active underline (`/products` →
+  "Products" underlined).
+  Text links hidden below 900px on both routes, matching `HomeNavbar`'s
+  confirmed breakpoint behavior exactly.
+- Search icon, basket, and Login button all present and unchanged
+  functionally at every width.
+
+Zero page errors.
+
+## Session — Fix mobile hero copy spacing gap (logged in NEXT_STEPS.md)
+
+Stacked mobile hero measured 895px against the Figma `mob 01` frame's
+748px — the copy block was reusing desktop's 27/50/40/60px margins
+verbatim rather than real mobile anchors.
+
+### What was checked
+
+Pulled full `get_design_context` for both hero nodes directly (desktop
+`5:15`, mobile `7:144`) rather than estimating — real absolute
+y-positions for eyebrow/discount/H1/sub/button on both frames. For each
+of the 4 margins, computed the real value as `(next element's top) -
+(previous element's top + previous element's rendered line-box height)`,
+verified the methodology against the desktop side first (reproduced the
+already-shipped 27px and 50px exactly this way, confirming the method is
+sound) before trusting it for the mobile side (yielding 25/10/20/50px).
+Converted each to a `clamp()` using the desktop-shipped value as the
+upper anchor (left unchanged — already approved/live) and the freshly
+measured mobile value as the lower anchor, same two-anchor pattern as
+`--vt-gutter`/`--vt-h1-size`.
+
+Two more real contributors to the overshoot were found and fixed along
+the way, both mobile-only values with no desktop equivalent (so left as
+plain fixed values, not clamps, per the standing convention for
+single-anchor values): `.hm-hero-copy`'s margin-top (image-panel-bottom
+to eyebrow-top gap) was `40px`, invented; the real `mob 01` gap is
+`29px`. `.hm-hero-inner`'s bottom padding was `56px`, also invented; the
+real frame has **zero** space after "Shop Now" — its bottom edge lands
+exactly at the hero's own bottom edge.
+
+Sanity check: summing all real anchor values (image panel 372px + all
+corrected gaps/margins + element heights) totals exactly 748px, matching
+the Figma frame's height to the pixel — confirming the derivation, not
+just asserting it.
+
+### Files
+
+| File | Change |
+|---|---|
+| `src/css/navbar.css` | `.hm-hero-discount`/`.hm-hero-title`/`.hm-hero-sub`/`.hm-shop-now` margins converted to `clamp()`; `.hm-hero-copy` margin-top and `.hm-hero-inner` bottom padding corrected to real measured mobile-only values |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window. Mobile hero height: **756px** (previously 895px)
+against the Figma frame's **748.07px** — a ~1% residual gap (browser
+font-metric rounding, not a measurement error), down from a ~20%
+overshoot. Desktop hero height unchanged at every width (still governed
+by `--vt-hero-height`, untouched by this fix) — confirmed no visual
+regression via screenshot at 1920/1536/1440/390 and the real window.
+`NEXT_STEPS.md`'s entry marked resolved (kept, not deleted, per the
+existing convention).

@@ -56,6 +56,26 @@ This repo's own next-steps log — separate from the backend's
 execution (see `docs/ai/COMPLETED_TASKS.md`) but explicitly deferred, not
 fixed, at the time they were found.
 
+## `public/img/banner.webp` is now orphaned — safe to delete
+
+Its only reference was `OtherNavbar`'s old CSS background rule, removed
+when `OtherNavbar.tsx`/`navbar.css` were rebuilt to the HikMali
+palette/structure (same treatment as `HomeNavbar`'s Section 1 rebuild).
+Not deleted in this pass, per the established convention of flagging
+orphaned assets rather than deleting them without explicit confirmation.
+
+## `ActiveUsers.tsx` needs a HikMali-consistent restyle
+
+Kept intentionally when the other old Burak-era homepage sections were
+deleted (`Statistics`/`PopularDishes`/`NewDishes`/`Advertisement`/
+`Events`) — it's genuinely wired to real backend data
+(`MemberService.getTopUsers()`) with no equivalent among the 12 HikMali
+sections, so deleting it would have lost real functionality, not just old
+styling. Still on the old Burak palette/typography (`#f8f8ff` background,
+"Dancing Script" heading font, purple default-avatar accent) rather than
+the olive/sage/cream HikMali palette used everywhere else. Needs a visual
+restyle pass, not a rebuild — the data wiring is correct as-is.
+
 ## Backend gap: no price-range filtering on `GET /product/all`
 
 Checked directly, not assumed: `../venturo/docs/ai/API_REFERENCE.md`
@@ -252,20 +272,85 @@ wasn't exposed) so this section could feature the real highest-priced
 product (`order=productPrice, sortDirection=DESC`) without duplicating
 any prior section's sort. Available to any future section that needs it.
 
-## Mobile hero copy spacing is looser than the `mob 01` frame
+## For future reference: Section 10 "Instagram" is decorative-only, not a live feed
 
-Found while verifying the hero viewport-height cap; not fixed, as it was
-outside that task's scope. In the stacked mobile layout the hero measures
-**895px** against the Figma mobile frame's **748px** — a ~147px gap. The
-image panel is correct at 372px; the difference sits entirely in the copy
-block, which still uses the desktop-derived vertical rhythm (27 / 50 / 40 /
-60px margins, 460px total) where `mob 01` uses tighter spacing.
+No ambiguity, nothing deferred — the 6 tiles ship as flat placeholder
+panels (see `docs/ai/COMPLETED_TASKS.md`). Noting only what a real
+integration would need later, if ever wanted: an Instagram API key/token
+and the brand's actual real Instagram handle — neither exists today.
 
-Not a layout break — mobile pages scroll, and the design's own header+hero
-(873px) likewise exceeds a phone viewport — but it is a fidelity gap. Worth
-folding into whichever increment next touches mobile spacing, ideally by
-reading mobile anchors for those margins so they can become fluid tokens
-like the gutter and H1.
+## Footer (Section 12) newsletter signup has no real backend endpoint
+
+Figma node `2012:455`. The form renders as designed ("Sign up for 10%
+off your first order," email input, Subscribe button) but has nowhere
+real to submit to — no email-capture concept exists anywhere in the
+backend schema. `onSubmit` currently just prevents default and does
+nothing; no fake success state was shipped. To make this real: an
+endpoint to capture an email (plus, if the "10% off" is meant literally,
+a real discount-code mechanism — which doesn't exist either, see the
+no-discount-field notes on Sections 4/6/7/9).
+
+## Footer (Section 12) dropped a duplicate "Learn" column and several unreal links
+
+The design's "Shop" and "Learn" footer columns are literally identical
+content in the source ("All Products / Care / Service / Trekking /
+Hiking"), confirmed on both the desktop and mobile nodes — not a one-off
+mockup slip. Consolidated to a single real "Shop" column (All Products,
+Trekking, Hiking — the latter two deep-linked via
+`?productCollection=`) and dropped "Learn" entirely, since it had no
+distinct real content of its own.
+
+Also dropped, all with no real destination anywhere in this app: "Care,"
+"Service," "Wholesale," "Sitemap." "FAQs" was kept — `/help` has a real
+FAQ tab. If real content or pages for any of the dropped items is ever
+added (a care/service guide, a wholesale program, a sitemap page), this
+is the place to restore them as real links rather than placeholders.
+
+Also fixed the same underlying problem in the *pre-existing* footer
+(predating this rebuild, not just the new mock): `devexuz@gmail.com`,
+a Dubai address, a `+971` phone number, and "© Copyright Devex Global"
+were all leftover template-vendor placeholders, not real Venturo
+details. Dropped along with the new mock's `support@stereolabs.com` /
+`Location: India` — none of these were ever real. Copyright is now a
+real, generic "© 2026 Venturo. All rights reserved." If Venturo has a
+real support email, phone, or address to publish, this is where it goes.
+
+## ~~Mobile hero copy spacing is looser than the `mob 01` frame~~ — RESOLVED
+
+**Fixed.** Pulled the real Figma anchors directly from both hero nodes
+(desktop `5:15`, mobile `7:144`) rather than reusing the desktop-derived
+27/50/40/60px margins on mobile. For each of the four copy-block margins,
+computed the real value as `(next element's top) - (previous element's
+top + previous element's actual rendered line-box height)` at both
+breakpoints, then converted to a `clamp()` matching the existing
+`--vt-gutter`/`--vt-h1-size` two-anchor pattern (desktop anchor unchanged
+at 27/50/40/60px — already shipped/approved; mobile anchor newly derived
+at 25/10/20/50px):
+
+```css
+.hm-hero-discount { margin-top: clamp(25px, 0.131vw + 24.49px, 27px); }
+.hm-hero-title     { margin: clamp(10px, 2.614vw - 0.2px, 50px) 0 0 0; }
+.hm-hero-sub        { margin-top: clamp(20px, 1.307vw + 14.9px, 40px); }
+.hm-shop-now         { margin-top: clamp(50px, 0.654vw + 47.45px, 60px); }
+```
+
+Two more contributors were found and fixed along the way — both
+mobile-only values (no desktop equivalent to interpolate against, so left
+as plain fixed values rather than clamps), also invented rather than
+measured, also contributing to the overshoot: the gap between the image
+panel's bottom edge and the "Hot Deals" eyebrow (`.hm-hero-copy`
+margin-top, was `40px`, real value `29px` — the real gap in `mob 01`) and
+a bottom padding after "Shop Now" (`.hm-hero-inner` padding-bottom, was
+`56px`; the real frame has **zero** space after the button — the button's
+own bottom edge lands exactly at the hero's bottom edge). Fixed to `0`.
+
+Live-verified: mobile hero height is now **756px** against the Figma
+frame's **748.07px** — a ~1% residual gap (browser font-metric rounding
+against Figma's declared leading, not a measurement error) versus the
+previous 895px/~20% overshoot. Desktop hero height unaffected (still
+governed by `--vt-hero-height`, untouched by this fix) — confirmed via
+screenshot at 1920/1536/1440/390 plus the real 1440×719 window, no visual
+regression at any width.
 
 ## `CI=true npm run build` fails on pre-existing ESLint warnings
 
