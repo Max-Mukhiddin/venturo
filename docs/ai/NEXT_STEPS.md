@@ -646,3 +646,15 @@ fixed in that session (out of scope for a photo re-source). Likely fix:
 size `.hl-heading`'s `top` proportionally (a `%` value, or a fluid
 `--vt-*` token) instead of a fixed px anchored to the 1920 frame — same
 class of fix already used elsewhere for fluid positioning.
+
+## `Highlights.tsx` heading-clipping bug — resolved
+
+The `.hl-heading`/`.hl-tick`/`.hl-cross` fixed-px-in-fluid-container
+item above is resolved — see `docs/ai/COMPLETED_TASKS.md` for the full
+writeup (the fix ended up broader than just the heading: `.hl-tick` was
+found to overflow the section even at its own 1920 anchor due to an
+unrelated rotation-math bug, and the fluid heading position also
+uncovered a new interaction with `.hl-card`'s fixed 554px height that
+needed a `min-height: 800px` floor on `.highlights` itself to resolve
+cleanly). Left the original entry above in place per this doc's
+append-only convention rather than deleting it.
