@@ -631,3 +631,18 @@ this file, listed in the ESLint warnings section further down) are both
 resolved — see `docs/ai/COMPLETED_TASKS.md` for the full writeup.
 Left the original entries above in place per this doc's append-only
 convention rather than deleting them.
+
+## `Highlights.tsx`'s heading is clipped at 1440px width
+
+Discovered while re-measuring contrast during the Highlights photo
+re-source session (see `docs/ai/COMPLETED_TASKS.md`). `.hl-heading` has
+a fixed `top: 595px`, but `.highlights` itself is `aspect-ratio: 2.4`
+(fluid height = width ÷ 2.4) — at 1920 that's 800px tall (heading fits
+comfortably), but at 1440 it's only 600px tall, so the heading
+(595–627px) is almost entirely clipped by `.highlights`' own
+`overflow: hidden`, leaving only a ~5px sliver visible. Unrelated to
+either photo used in this section — a scrim can't fix clipping. Not
+fixed in that session (out of scope for a photo re-source). Likely fix:
+size `.hl-heading`'s `top` proportionally (a `%` value, or a fluid
+`--vt-*` token) instead of a fixed px anchored to the 1920 frame — same
+class of fix already used elsewhere for fluid positioning.

@@ -1651,39 +1651,46 @@ with a real photo, same Unsplash pipeline as every prior section.
 
 ### The photo
 
-[Toomas Tartes — "Hikers on trail toward mountain peaks"](https://unsplash.com/photos/hikers-on-trail-toward-mountain-peaks-Yizrl9N_eDA)
-(https://unsplash.com/@toomastartes). Picked over more posed/close-up
-candidates for: wide landscape format suiting the full-bleed 2.4:1
-section, hikers mid-walk (not posed), a dramatic snow-capped peak fitting
-the "Highlights" framing, and clean negative space specifically in the
-bottom-left region — the only part of the photo actually visible around
-the overlay text, since the opaque product card already covers most of
-the left side top-to-bottom (card is 554px tall inside an 800px-tall
-section; the heading/tick sit in the remaining 246px strip below it, not
-behind the card itself). License: Unsplash License (free for commercial
-use, no attribution legally required); credited above as good practice.
-Downloaded via curl into `public/img/highlights.jpg`.
+**Corrected 2026-09-02 — re-sourced for a stronger shot, see the session
+below.** [Pure Brasov — "Hikers on a path through a green mountain
+landscape"](https://unsplash.com/photos/hikers-on-a-path-through-a-green-mountain-landscape-SaXhw2RwDrI)
+(https://unsplash.com/@purebrasov). Was Toomas Tartes' "Hikers on trail
+toward mountain peaks" — that photo worked but was visually flatter than
+this one's layered, jagged ridgelines and visible hiking group for scale.
+License: Unsplash License (free for commercial use, no attribution
+legally required); credited above as good practice. Downloaded via curl
+into `public/img/highlights.jpg` (same filename, in-place replacement).
 `download_location` tracking call confirmed 200.
 
-### Legibility — measured per breakpoint, per the lesson from Banner
+### Legibility — re-measured for the new photo, per breakpoint
 
-Same pixel-sampling contrast script, run at all 4 widths individually
-rather than once — this section turned out not to need any scrim at all,
-but that was confirmed by measurement, not assumed from Banner's
-"sometimes you don't need one" cases:
+Same pixel-sampling contrast script as before, re-run because a
+different photo can need a different scrim strength — confirmed true
+this time: unlike the original photo, this section's fixed-height
+`.highlights` box (`aspect-ratio: 2.4`, so height = width ÷ 2.4)
+combined with `.hl-heading`'s **fixed** `top: 595px` means the heading
+is only fully on-screen at 1920/1536; at 1440 the section is 600px tall
+and the heading (595–627px) is clipped to a ~5px sliver by
+`.highlights`' `overflow: hidden` — a **pre-existing responsive bug,
+unrelated to either photo** (a scrim cannot fix clipping), discovered
+while re-measuring and left unfixed as out of scope for this photo
+re-source; flagging here rather than silently working around it.
 
 | Width | Heading visible | Background sample | Contrast ratio |
 |---|---|---|---|
-| 1920 | yes | rgb(133,123,74) | **4.26:1** |
-| 1536 | yes | rgb(103,91,50) | **6.73:1** |
-| 1440 | yes | rgb(18,12,1) | **19.47:1** |
+| 1920 | yes | rgb(114,125,95) | **4.36:1** (AA, large text) |
+| 1536 | yes | rgb(121,133,119) | **3.86:1** (AA, large text) |
+| 1440 | **clipped to ~5px by the bug above — not meaningfully measurable**, not a photo/contrast issue | n/a | n/a |
 | 390 | **no** — confirmed hidden (`display:none`), matching the confirmed mobile frame (7:148), which has neither the heading, tick, nor cross markers at all | n/a | n/a, not measured — nothing to measure |
 
-All 3 desktop widths clear the AA large-text threshold (3:1) with
-margin — no scrim needed anywhere. The product card's own background
-was also re-confirmed unchanged (`rgb(245,245,245)`, solid, unaffected
-by the new photo) at every width, not just assumed from the earlier
-session's note.
+Both measurable widths clear the AA large-text threshold (3:1) — no
+scrim added, per the same "don't apply one speculatively" discipline as
+every prior section. Margin is tighter than the previous photo's
+(4.26/6.73:1 → 4.36/3.86:1), worth keeping in mind if this photo is
+ever replaced again. The 1440 clipping bug should get its own look: fix
+would be sizing `.hl-heading`'s `top` proportionally (e.g. a `%` value
+or a `--vt-*` fluid token) instead of a fixed px anchored to the 1920
+frame.
 
 ### Files
 
