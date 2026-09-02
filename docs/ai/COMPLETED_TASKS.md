@@ -2062,3 +2062,128 @@ markup + `serverApi` import).
 
 No backend code changes — Task 2 used the existing real
 `POST /admin/user/edit` endpoint as-is.
+
+## Session — Homepage polish pass: card hover redesign, Active Users fixes, Product Details, final consistency sweep
+
+Frontend-only session (no backend code changes). Batched per explicit
+instruction: implemented and verified everything below before writing
+this single combined entry and committing.
+
+### 1. Best Products / Deals Of The Day: hover-reveal card redesign
+
+Both sections' cards showed name+description+rating always visible in a
+static block above the image — text-heavy at rest, inconsistent with an
+image-forward product catalog. Redesigned to a shared hover-reveal
+treatment:
+
+- **Default**: image fills the card (unchanged sizing from the prior
+  session's fix), only the product name is visible — fixed-height info
+  header (`height: 80px`, `-webkit-line-clamp: 2`) so a 1- vs 2-line name
+  can never change card height.
+- **Hover**: description (+ rating, Best Products only) fades in as an
+  absolutely-positioned overlay *inside* the image box — `position:
+  absolute; inset: 0` inside `.bp-card-media`/`.dd-card-media`, so it
+  occupies zero flex-flow space and can never push the card taller.
+  `opacity 200ms ease-out` in, `250ms ease-in-out` out — reused verbatim
+  from Best Products' pre-existing `box-shadow`/price-reveal timing
+  rather than inventing a new curve. Deals Of The Day previously had no
+  hover treatment at all on its card; unified to the same box-shadow
+  lift + overlay pattern so both sections now share one consistent
+  design instead of two.
+- **Touch fallback**: the opacity-0 hidden-by-default state is scoped
+  inside `@media (hover: hover)` — outside it (real touch devices) the
+  overlay defaults to `opacity: 1`, so the description is never
+  permanently unreachable off a pointer device. Verified on a real
+  iPhone 13 Playwright emulation (`window.matchMedia("(hover: hover)")
+  === false`) with no interaction: overlay opacity confirmed `1`.
+  (Found and worked around a Playwright-specific artifact along the way:
+  calling `.screenshot()` on an element internally triggers a CDP mouse
+  move that flips the emulated `hover: hover` feature to `true` for the
+  rest of that browser context — confirmed via isolated fresh-context
+  tests that this doesn't reflect real touch-device behavior, just a
+  test-harness quirk to route around with separate contexts.)
+- **Scrim legibility, measured not assumed**: first tried a top-to-
+  bottom gradient scrim (matching the visual weight of the hero/banner
+  treatments); real pixel-sampling contrast measurement against all 4
+  real product photos found it dropped to 2.3:1 near the top of the box
+  (weak scrim + bright sky pixels) — a real risk for any future longer
+  description wrapping higher into that zone. Switched to a flat
+  `rgba(27,28,23,0.75)` scrim instead: measured 7.64–8.63:1 (WCAG AAA)
+  uniformly across the *entire* overlay area on both sections, robust to
+  text of any length/position, not just today's short descriptions.
+- **Card-height parity, verified not eyeballed**: `getBoundingClientRect()`
+  confirmed all 4 cards in each grid are identically 446px, both before
+  and after hovering any card, at both 1920 and 1440.
+
+### 2. Active Users: fallback avatar + row spacing
+
+Two real bugs found live (screenshot showed `qa_tester_002` — no
+`memberImage` — rendering as a jarring purple silhouette next to
+`noah_backcountry`'s correctly-styled real photo):
+
+- **Fallback icon color**: the shared `default-user.svg` (used across
+  navbars, the user page, and orders page too) carries old generic
+  Bootstrap-purple (`#a597fc`) fill/stroke colors — a leftover, not a
+  CSS-treatment bug. The `.au-avatar` box itself (140×140, 50% radius,
+  box-shadow, `background-size: cover`) was already applied identically
+  to both the real-photo and fallback paths — confirmed via computed
+  styles, not assumed. Rather than recolor the shared, multi-page SVG
+  (out of scope, risks regressing already-shipped navbar/user-page
+  appearance), added a new `public/icons/default-user-au.svg` — same
+  glyph, recolored to `#aeb192` (sage) — and pointed only
+  `ActiveUsers.tsx`'s fallback at it. Verified both avatars are now
+  pixel-identical (140×140, same radius/shadow/`cover`) — only the
+  `background-image` URL source differs, exactly as required.
+- **Row gap**: `.au-row`'s `gap: 40px` was double every other card grid
+  on the page (`bp-grid`/`dd-grid`/`sbc-row` all use `20px`) — clearly
+  only ever visually checked with a single card (no gap to judge).
+  `getTopUsers` confirmed capable of returning up to 4 real members
+  (`memberPoints: { $gte: 1 }`, `limit: 4`, sorted desc). Tightened to
+  `20px` to match the established rhythm; now reads as an intentional
+  compact pair rather than a loose spread.
+
+### 3. Product Details audit
+
+- **Price wasn't actually missing** — `.pd-price` was present and
+  `visibility: visible` in the DOM, just `font-size: 14px`/`font-weight:
+  500`, identical to body copy and sitting directly under a 32px bold
+  title, so it was easy to miss entirely at a glance (matches the "not
+  visible at all" report). Bumped to `28px`/`600`. Tried the sage accent
+  (`#aeb192`) first — measured only 2.21:1 against white, fails WCAG AA
+  even at large-text size — kept the olive title color (`#707262`)
+  instead, measured 4.92:1 (passes AA/AAA for large text).
+- **Image fill**: `.pd-main-image` already correctly uses `100%`/`100%`/
+  `object-fit: cover` from the prior session's image-sizing fix —
+  re-verified live via computed style (`objectFit: "cover"`, filling its
+  654×888px box exactly), not assumed correct just because it renders
+  large.
+- **Sort/data correctness**: `order=productPrice, sortDirection=DESC`
+  confirmed still correct against the current real catalog — "3-Person
+  Dome Tent" at $179 is genuinely the highest-priced of the 7 real
+  products (cross-checked against the product table earlier in
+  `COMPLETED_TASKS.md`), not stale data.
+
+### 4. Final full top-to-bottom consistency sweep
+
+Screenshotted every remaining section fresh (not just re-checking
+already-flagged ones) at 1920 and 390: Banner, Shop by Category, Deals
+Of The Day, Product Details, Instagram, Free Shipping, Active Users,
+Footer. Found one real inconsistency: **Deals Of The Day's heading was
+`font-size: 14px`/`font-weight: 500`** — body-text sized, reading as an
+unfinished afterthought next to Shop by Category's `32px/600` and Best
+Products' fluid `--vt-h1-size`/`700`. Matched to Shop by Category's
+treatment (`32px`/`600`), the closest sibling in visual weight.
+Everything else reviewed (Banner panels, Shop by Category cards,
+Instagram grid, Free Shipping icons, Footer) was already consistent
+with the rest of the rebuild — footer's wide gap between the brand/
+subscribe block and the Shop/Help columns was left alone as an existing
+intentional wide-layout convention, not a new regression.
+
+### Verification
+
+`npx tsc --noEmit` and `npm run build` clean after every change in this
+session. Live Playwright screenshots at 1920 and 390 of the full
+homepage top-to-bottom, plus targeted section crops and hover-state
+captures throughout. Zero browser console/page errors on load
+(`pageerror`/`console.error` listeners, confirmed empty). No frontend
+regressions found in any section not explicitly touched this session.
