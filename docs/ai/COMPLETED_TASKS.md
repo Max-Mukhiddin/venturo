@@ -2420,3 +2420,90 @@ at 1920/1440/390 on both `/products` and `/products/:id` confirmed the
 band, trail text, and heading all render correctly with real data at
 every width; "Home" link confirmed as a real `react-router` route, not
 decorative.
+
+## Session — Shop List/Shop Detail rebuild, Session 2: grid + card redesign
+
+Second scoped session of the approved Shop List/Shop Detail build order.
+Scoped to the grid, card, and category filter only — sort controls,
+results count, and pagination (Session 3) deliberately untouched.
+
+### Category filter — real design decision, resolved with the user first
+
+Figma's Shop List frame (`2458:2`) shows only a compact, collapsed
+"Filter" control with no expanded state visible in the static frame —
+genuinely unknowable what widget it opens into. Rather than guess,
+proposed 3 real options (horizontal chip row / dropdown panel / compact
+drawer) via `AskUserQuestion`; user picked the horizontal chip row.
+Replaced the old 8-button rotated `-90deg` sidebar (`.category-tabs`)
+with `.sl-filter-row` — the same real `ProductCollection` values
+(`CATEGORY_FILTERS` array), same `searchCollectionHandler` wiring,
+just a compact pill-row widget instead of a vertical rotated rail.
+
+### Grid + card — reused bp-card verbatim, not a new pattern
+
+`.sl-card` is structurally identical to `bp-card` (home.css, from the
+homepage rebuild): fixed-height `80px` name header
+(`-webkit-line-clamp: 2`, so a 1- vs 2-line name can't change card
+height), fixed `320px` `object-fit: cover` media, an absolutely-
+positioned hover-reveal overlay for desc/rating (opacity 200ms ease-out
+in / 250ms ease-in-out out — same timing reused verbatim, not
+reinvented), and an "Add To Cart" bar pinned via `margin-top: auto`
+with the price hover-revealed inside it
+(`max-width`/`opacity` transition, identical to `bp-add-price`).
+Same measured flat scrim (`rgba(27,28,23,0.75)`, previously verified
+>=7:1 WCAG AAA against the brightest real product photo) — not
+re-measured against different photos in this pass since it's the same
+scrim already proven against the same real catalog images. Same touch
+fallback: overlay defaults to visible outside `@media (hover: hover)`.
+
+Figma's card also shows "Model : ... " + 4 color swatches + a delivery-
+day estimate on hover — no backend field for any of the three (no
+model/variant field, no color-swatch data, no delivery-estimate field
+on `Product`), the same class of gap already resolved for Best
+Products/Highlights/Product Details. Dropped, per that same precedent —
+only real fields render: name, description (when present), rating
+(when `reviewCount > 0`), and price. The old card's cart-icon-button +
+real `productViews` eye-badge hover treatment was also replaced by the
+bp-card pattern rather than kept alongside it — the task's explicit
+brief was to reuse bp-card's convention "verbatim, don't invent a new
+pattern," and bp-card doesn't carry a views badge; dropping it keeps
+this card consistent with every other product-grid card on the site
+rather than becoming a third, one-off treatment. The always-visible
+orange "NORMAL size" `Chip` badge was dropped for the same
+consistency-over-one-off reason (bp-card has no size badge either;
+Figma's Shop List card doesn't show one).
+
+### Real bug found and fixed: grid container too narrow for 390px cards
+
+`.sl-grid` initially used `grid-template-columns: repeat(4, minmax(0,
+1fr))` (same as `bp-grid`) — but Best Products' homepage row lives
+inside the site's own `--vt-content-max: 1920px` container, while Shop
+List still uses a legacy MUI `<Container>` capped around ~1200-1280px.
+`minmax(0, 1fr)` squeezed cards to a measured 298px instead of 390px.
+Switched to fixed `390px` tracks (`repeat(auto-fill, 390px)`,
+`justify-content: center`) so cards are always the real Figma size
+regardless of how many fit per row — confirmed via live measurement,
+390px exactly. Only 3 columns fit at the current container width
+instead of Figma's 4; flagged as a new `NEXT_STEPS.md` item rather than
+widening the shared `<Container>` (would reflow the title/search/sort
+row this session wasn't touching).
+
+### Verification
+
+`npx tsc --noEmit` and `npm run build` clean (bundle actually shrank —
+several MUI component imports, `Card`/`CardMedia`/`Chip`, are no longer
+used). Live Playwright checks at 1920/1440/390: card measured exactly
+390px wide, `446px` tall (matches `bp-card`'s exact fixed-sum height),
+hover confirmed revealing the overlay and `"Add To Cart | $89"` price
+text, filter chips confirmed switching `productSearch.productCollection`
+and re-fetching (verified the real empty state — "Other" has 0 real
+products — renders correctly too). Confirmed a pre-existing horizontal
+overflow at 390px width is **not** caused by anything built this
+session — traced to the untouched `title-container`
+(`margin-left: 450px`), fixed-width search box, "Our Family Brands", and
+the address `<iframe>`, all already-flagged legacy Burak content outside
+this session's scope. Every collection in the real catalog currently
+holds exactly 1 product, so true multi-card-per-row wrapping wasn't
+visible live — the grid math itself (fixed 390px tracks, 20px gap) is
+deterministic CSS, confirmed correct without needing more catalog data
+to prove it.

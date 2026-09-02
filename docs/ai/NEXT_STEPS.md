@@ -658,3 +658,21 @@ uncovered a new interaction with `.hl-card`'s fixed 554px height that
 needed a `min-height: 800px` floor on `.highlights` itself to resolve
 cleanly). Left the original entry above in place per this doc's
 append-only convention rather than deleting it.
+
+## Shop List's grid container is narrower than its own cards need
+
+Discovered during the Shop List grid/card rebuild (Session 2 of the
+Shop List/Shop Detail plan — see `docs/ai/COMPLETED_TASKS.md`). The
+page still wraps everything (title, search, sort, the product grid) in
+one shared MUI `<Container>` capped around ~1200-1280px — narrower than
+the 1620px (4 x 390px cards + 3 x 20px gaps) the real Figma 1920
+desktop anchor uses. `.sl-grid` uses fixed 390px tracks
+(`grid-template-columns: repeat(auto-fill, 390px)`) so the cards
+themselves are still the correct real size, but only 3 fit per row at
+today's container width instead of Figma's 4. Not fixed in that
+session — deliberately out of scope, since widening the container would
+also reflow the title/search/sort row, which that session was
+explicitly not touching. Likely fix: give the product-grid area its own
+wider `--vt-gutter`/`--vt-content-max` wrapper (matching the convention
+every homepage section already uses) instead of the shared MUI
+`Container`, whenever the title/search/sort row gets its own session.
