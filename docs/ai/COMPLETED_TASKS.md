@@ -1782,7 +1782,7 @@ repeats:
 | Product | Collection | Price | Size | Left | Photo | Photographer |
 |---|---|---|---|---|---|---|
 | Alpine Ascent Climbing Harness | CLIMBING | $89 | NORMAL | 14 | ["person with blue safety harness on focus photo"](https://unsplash.com/photos/person-with-blue-safety-harness-on-focus-photo-vJICk89hFbU) | DiEGO MüLLER (https://unsplash.com/@di360muller) |
-| 3-Person Dome Tent | CAMPING | $179 | LARGE | 9 | ["a tent pitched up in a field with trees in the background"](https://unsplash.com/photos/a-tent-pitched-up-in-a-field-with-trees-in-the-background-zcCC-17BF6I) | Kampbros (https://unsplash.com/@kampbros) |
+| 3-Person Dome Tent | CAMPING | $179 | LARGE | 9 | ["a group of tents on a field"](https://unsplash.com/photos/a-group-of-tents-on-a-field-K81YThadgfM) | Pattanapong Tuamkhum (https://unsplash.com/@pattanapong_studio) — **corrected 2026-09-02, see session below; was Kampbros' "a tent pitched up in a field with trees in the background"** |
 | Trailblazer 40L Hiking Backpack | HIKING | $129 | NORMAL | 17 | ["person holding black and brown Vinta backpack"](https://unsplash.com/photos/person-holding-black-and-brown-vinta-backpack-O_bhy3TnSYU) | Jakob Owens (https://unsplash.com/@jakobowens1) |
 | Summit Trekking Poles (Pair) | TREKKING | $45 | NORMAL | 20 | ["hiking poles rest on dry grass"](https://unsplash.com/photos/hiking-poles-rest-on-dry-grass-QBvikej4dIw) | Vladyslav Tobolenko (https://unsplash.com/@tobolenkoph) |
 | All-Terrain Cycling Helmet | CYCLING | $69 | NORMAL | 12 | ["a black helmet with holes on the side of it"](https://unsplash.com/photos/a-black-helmet-with-holes-on-the-side-of-it-rw8jnGPJpho) | Jan Kopřiva (https://unsplash.com/@jxk) |
@@ -1885,3 +1885,84 @@ at every width, circular avatar with correct 140×140 box confirmed via
 width. Full-page screenshot at 1440 confirmed no layout shift in
 Free Shipping (above) or Footer (below) — section flows cleanly between
 them.
+
+## Session — Re-source Dome Tent photo + create 3 real members
+
+### Task 1: "3-Person Dome Tent" photo replacement
+
+The original Kampbros photo (flat, dull lighting) was the visibly
+weakest of the 7 product photos. Replaced via Unsplash's Search API
+(same pipeline as the original catalog session): searched "camping tent
+sunny", "dome tent product clean", and "tent campsite bright daylight" —
+the first two returned mostly off-topic results (scenic landscapes,
+unrelated dome buildings), the third surfaced the pick. Previewed 4
+tent-focused candidates from that third search before choosing
+Pattanapong Tuamkhum's bright-sky, sharp-focus, front-facing tent shot —
+clearly cleaner and better-lit than the alternatives (one backlit/dim,
+one overcast/dull like the original, one moody dusk shot). No
+photographer collision with any existing catalog credit.
+`download_location` tracking call confirmed 200 before use. Table entry
+above corrected in place (not appended) since this replaces previously
+documented data, not new data.
+
+**Admin update path gap, flagged as instructed**: `POST
+/admin/product/:id` (`updateChosenProduct`) has no `multer`/uploader
+middleware in `router-admin.ts` — only `POST /admin/product/create`
+does. So it does not support multipart image replacement; it accepts an
+arbitrary JSON body forwarded straight to
+`findByIdAndUpdate(id, req.body)` with no field whitelist. Used the real
+authenticated admin session (`POST /admin/login` with the existing
+`Admin` account, confirmed via `/admin/check-me`) to call this endpoint
+with `{ productImages: ["uploads/products/<uuid>.jpg"] }` — the new file
+was placed on disk first, under the same `uploads/products/<uuid>.<ext>`
+naming convention `libs/utils/uploader.ts`'s multer storage uses, so the
+real serving path is unaffected. This is the real HTTP admin API, not a
+direct DB write, but is a workaround for a genuine gap: **the admin
+update endpoint cannot itself receive an uploaded file for an existing
+product** — flagging for a possible follow-up (`makeUploader("products")
+.array("productImages", 5)` could be added to the `/product/:id` route
+the same way `/product/create` has it).
+
+Old image (`uploads/products/1c207440-06a3-4edf-8889-e415edafa09d.jpg`)
+is now orphaned — left in place, not deleted, per the established
+orphaned-asset convention (flag rather than silently remove).
+
+### Task 2: 3 real member signups
+
+Created via the real `POST /member/signup` endpoint (JSON body, no
+`multer` on this route either — confirmed in `router.ts`), each
+followed by a login-scoped `POST /member/update` call (this route *does*
+have real multipart support: `uploader("members").single("memberImage")`
++ `verifyAuth`) to attach a real Unsplash-sourced profile photo. No DB
+shortcut anywhere in this flow.
+
+| Nickname | Phone | Address | Bio | Photo | Photographer |
+|---|---|---|---|---|---|
+| james_summitseeker | 5551234567 | 14 Cedar Ridge Rd | Weekend summit hiker, always chasing sunrise views. | ["Chin up"](https://unsplash.com/photos/pUhxoSapPFA) | Jeffrey Keenan |
+| elena_mossytrail | 5552345678 | 27 Fernwood Ln | Slow-hiking through mossy forest trails, camera always in hand. | ["Young woman rests against mossy wall on a wooden path"](https://unsplash.com/photos/-Y9aXsLJyBk) | Ian Edokov |
+| noah_backcountry | 5553456789 | 9 Windgap Ct | Backcountry backpacker, three-season camper, gear nerd. | ["smiling man with green mountaineering bag during daytime"](https://unsplash.com/photos/3Y366aqddJ0) | Mike Baker |
+
+Phone numbers follow the existing `qa_tester_002` fake-but-valid
+10-digit format (`555` prefix). All three created as `memberType: USER`
+/ `memberStatus: ACTIVE` — not admins. Each photo's `download_location`
+tracking call confirmed 200. No photographer collision with any existing
+credit (product photos or these three).
+
+### Verification (batched, both tasks)
+
+`GET /product/all` confirmed the tent's `productImages` now points at
+the new file. Live Playwright check: new tent photo renders on the
+homepage (Best Products, Deals of the Day, Highlights — 3 occurrences)
+and on `/products/:id`'s detail page — bright sky, sharp tent, clean
+composition, confirmed visually via screenshot, clearly stronger than
+the old flat/dull photo. `GET /admin/user/all` (SSR EJS, not JSON —
+grepped the rendered HTML) confirms all 3 new nicknames plus the
+original `qa_tester_002` are present. `GET /member/top-users` still
+returns only `qa_tester_002` (`memberPoints: 3` vs. the new members'
+default `0`) — expected and correct, not a bug: `ActiveUsers.tsx`
+already handles any array length/content, no frontend code change
+needed or made.
+
+No frontend repository changes in this session — pure backend data
+session, confirmed via `git status` in the frontend repo before
+considering this done.
