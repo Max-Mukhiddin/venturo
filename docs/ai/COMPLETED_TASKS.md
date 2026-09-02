@@ -2358,3 +2358,65 @@ with the same pixel-sampling script used throughout this rebuild:
 Full-page screenshot at 1440 confirmed no layout regression elsewhere
 on the page from the section's height now locking to 800px at that
 width (previously 600px) — surrounding sections unaffected.
+
+## Session — Shop List/Shop Detail rebuild, Session 1: shared Breadcrumb component
+
+First scoped session of the approved Shop List/Shop Detail Figma gap-
+analysis build order (see the plan discussion — Products.tsx/
+ChosenProduct.tsx are the last two major unmigrated pages). Scoped
+strictly to the breadcrumb band only, per the session plan — nothing
+else in either file touched.
+
+### What was built
+
+`src/app/components/breadcrumb/index.tsx` — a shared `Breadcrumb`
+component (`heading: string`, `trail: { label: string; to?: string }[]`
+props) matching the identical `#d9dbc5` band / 48px bold heading /
+"Home | X" trail structure both the real Shop List (Figma `2458:2`) and
+Shop Detail (`2461:881`) frames use. Plain `className` + a dedicated
+`src/css/breadcrumb.css` file, no styled-components (the `divider`
+component is the only remaining styled-components consumer in the
+codebase — out of scope here, not touched).
+
+Real-route-over-decorative-mockup discipline, same precedent as
+`OtherNavbar`'s earlier rebuild: Figma's trail is a plain, non-
+interactive string ("Home     |    Shop"); "Home" renders as a real
+`react-router` `Link` to `/`, the current page renders as plain text,
+not a dead link.
+
+Layout uses normal document flow (trail above heading, inside the
+standard `--vt-gutter`/`--vt-content-max` container every other section
+already uses) rather than copying Figma's raw absolute coordinates —
+those don't translate correctly to plain CSS as-is (Figma's text-box
+trim metrics make the heading/trail's raw y-coordinates 7.5px apart
+despite rendering with a large visual gap in the actual screenshot;
+every prior section in this rebuild took the same flow-layout approach
+for the same reason).
+
+Heading size: flat `48px` (matches Figma's literal 1920 value), stepping
+to `32px` below the 900px structural breakpoint — noted in the CSS as a
+conservative, *unverified* fluid step-down, since no mobile Shop List/
+Shop Detail frame was pulled in this session (scoped to the breadcrumb
+only); worth confirming against the real mobile frame whenever those
+pages get their own dedicated mobile pass.
+
+### Wired in
+
+- `Products.tsx`: `<Breadcrumb heading="Shop" trail={[Home→"/", "Shop"]} />`
+  inserted as the first child, above all existing content.
+- `ChosenProduct.tsx`: same pattern, `heading="Shop Detail"`. The
+  existing `<Box className="title">Product Detail</Box>` inline heading
+  was deliberately left in place (not removed/deduplicated) — that's
+  explicitly Session 4's scope (Shop Detail gallery/info panel
+  restyle), and this session's instruction was "don't touch anything
+  else in either file yet." Both headings render for now
+  ("Shop Detail" in the new band, "Product Detail" below it,
+  unchanged) — a known, deliberate, temporary duplication.
+
+### Verification
+
+`npx tsc --noEmit` and `npm run build` clean. Live Playwright screenshots
+at 1920/1440/390 on both `/products` and `/products/:id` confirmed the
+band, trail text, and heading all render correctly with real data at
+every width; "Home" link confirmed as a real `react-router` route, not
+decorative.
