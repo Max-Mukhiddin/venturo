@@ -2283,3 +2283,78 @@ of Highlights (1920/390, before/after) and both Products pages
 checks throughout rather than trusting renders at a glance — this is
 what caught the `Dancing Script` fallback-font false positive on
 `ChosenProduct.tsx`.
+
+## Session — Fix Highlights.tsx heading-clipping bug
+
+Resolves the `.hl-heading` fixed-px-in-fluid-container item flagged in
+`docs/ai/NEXT_STEPS.md` during the prior photo re-source session.
+Checked whether `.hl-tick` and `.hl-cross` shared the same problem
+rather than assuming only the heading was affected — they did, and one
+turned out worse than the reported bug.
+
+### What was actually wrong
+
+- **`.hl-heading`**: fixed `top: 595px` inside `.highlights`
+  (`aspect-ratio: 2.4`, fluid height = width ÷ 2.4) — clipped to a ~5px
+  sliver at 1440 (600px-tall section), as already documented.
+- **`.hl-cross` × 6**: same fixed-px `top` values in `Highlights.tsx`'s
+  `CROSS_POSITIONS` array — one of them (`top: 708px`) clipped at both
+  1536 and 1440.
+- **`.hl-tick`**: a deeper, separate bug. The real Figma node is a
+  112×12 box rotated 90° (`rotate-90`), not a naturally-tall 12×112 bar.
+  The existing code approximated it as a plain vertical bar using
+  `top: 708px` as the *final visual* top — but 708px is Figma's
+  *pre-rotation* top-left corner; after a 90° rotation around the
+  element's center, the true visual span is 658–770px. This meant
+  `.hl-tick` overflowed `.highlights` by 20px even at the 1920 reference
+  width, confirmed live (`708 + 112 = 820 > 800`) before touching
+  anything — not something the fluid conversion introduced, a
+  pre-existing miscalculation from the original build session.
+
+### The fix
+
+- `.hl-heading`, `.hl-tick`, and all 6 `CROSS_POSITIONS` `top` values
+  converted to percentages of the 800px 1920-reference frame (e.g.
+  `595px` → `74.375%`). No second real anchor exists to `clamp()`
+  between — these elements are simply absent (not scaled) below the
+  900px structural breakpoint — so a straight proportional scale is the
+  correct conversion, not a two-point interpolation.
+- `.hl-tick` rebuilt to replicate Figma's actual structure — the
+  original 112×12 pre-rotation box (now fluid-positioned via the
+  percentage above) plus `transform: rotate(90deg)` — instead of
+  hand-approximating the rotated bounding box, which is what produced
+  the wrong reference point in the first place.
+- **A new interaction surfaced by making the heading fluid**: `.hl-card`
+  is a fixed 390×554px block (deliberately held constant — no second
+  Figma anchor for it either, same precedent applied everywhere in this
+  rebuild). Once the heading could move, at 1536/1440 its new
+  percentage-based position landed *inside* the card's fixed 0–554px
+  footprint, hiding it behind the card's opaque background instead of
+  clipping it — confirmed live before fixing (`bg rgb(245,245,245)`,
+  the card's exact fill color). Fixed by giving `.highlights` a
+  `min-height: 800px` floor — the section can never be shorter than the
+  single Figma anchor at any desktop width, so the fixed-size card and
+  the now-percentage-based heading/tick/crosses always reproduce the
+  exact 1920 anchor's relationships, at every width down to the 900px
+  structural breakpoint (where a separate mobile-specific rule resets
+  `min-height: 0`).
+
+### Verification
+
+`npx tsc --noEmit` and `npm run build` clean. Live position checks
+(`getBoundingClientRect`) at 1920/1536/1440/1440×719 confirmed zero
+clipping and zero card overlap for the heading, tick, and all 6 crosses
+— not just visually plausible, checked numerically. Contrast re-measured
+with the same pixel-sampling script used throughout this rebuild:
+
+| Width | Contrast | Result |
+|---|---|---|
+| 1920 | 4.36:1 | AA (large text) |
+| 1536 | 5.00:1 | AA |
+| 1440 | 4.68:1 | AA — genuinely measurable now, not just "no longer clipped" |
+| 1440×719 (real measured window) | 4.68:1 | AA |
+| 390 | n/a | heading/tick/crosses confirmed `display: none`, matching the mobile frame |
+
+Full-page screenshot at 1440 confirmed no layout regression elsewhere
+on the page from the section's height now locking to 800px at that
+width (previously 600px) — surrounding sections unaffected.
