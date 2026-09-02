@@ -676,3 +676,18 @@ explicitly not touching. Likely fix: give the product-grid area its own
 wider `--vt-gutter`/`--vt-content-max` wrapper (matching the convention
 every homepage section already uses) instead of the shared MUI
 `Container`, whenever the title/search/sort row gets its own session.
+
+## `MemberService.getRestaurant()` and the `swiper` dependency are now dead code
+
+Discovered during Sessions 3-5 of the Shop List/Shop Detail rebuild
+(see `docs/ai/COMPLETED_TASKS.md`). `ChosenProduct.tsx` was the only
+caller of `MemberService.getRestaurant()` — removed as part of Session
+5's content decision to drop the admin-info block entirely, so the
+method itself (defined in `src/app/services/MemberService.ts`) is now
+unused anywhere in the codebase. Not removed — `MemberService.ts` is
+outside those sessions' explicit file scope. Similarly, `ChosenProduct.tsx`
+was the only real consumer of the `swiper`/`swiper/react` package
+(confirmed via `npm run build`'s bundle size drop, ~25kB gzipped, once
+its imports were removed); the dependency itself is still listed in
+`package.json` — worth removing next time `package.json` is touched,
+not done here since neither session asked for a dependency cleanup.

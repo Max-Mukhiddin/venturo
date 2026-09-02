@@ -2507,3 +2507,103 @@ holds exactly 1 product, so true multi-card-per-row wrapping wasn't
 visible live — the grid math itself (fixed 390px tracks, 20px gap) is
 deterministic CSS, confirmed correct without needing more catalog data
 to prove it.
+
+## Session — Shop List/Shop Detail rebuild, Sessions 3-5: sort/pagination, Shop Detail restyle, restaurant→product rename
+
+Combined pass per the user's explicit request — all three are restyle/
+rename work reusing already-proven patterns, no new design decisions.
+Each sub-session verified independently at 1920/1440/390 before moving
+to the next; single combined commit.
+
+### Session 3 — Shop List sort + results count + pagination
+
+Sort control (`NEW`/`PRICE`/`VIEWS`) restyled onto the exact
+`.sl-filter-chip` pill treatment from Session 2's category filter — same
+real button/pill convention, not new styling (relabeled `Newest`/
+`Price`/`Most Viewed` for clarity, same `searchOrderHandler` wiring
+underneath). Moved into a new `.sl-results-row` alongside the results
+count, above the category chips.
+
+Results count ships honestly: `{products.length} Result(s)` — the real
+returned array length, correctly pluralized — not Figma's fabricated
+"Showing 1-15 of 50 Results" (the `50` has no backend equivalent; `GET
+/product/all` has no total-count field, already documented in
+`NEXT_STEPS.md`).
+
+`MuiPaginationItem` restyled to the site palette (`#707262` selected
+state, `#e5e3d3` hover) via scoped CSS overrides — no change to the
+existing page-count-estimation logic (`products.length === limit ?
+page + 1 : page`, already correct, untouched — that's the same honesty
+constraint already applied, not new to this session).
+
+### Session 4 — Shop Detail gallery + info panel restyle
+
+`ChosenProduct.tsx`'s looping `Swiper` carousel replaced with the real
+Figma (`2461:881`) rail + large-image split — reused `ProductDetails.tsx`'s
+(homepage) already-solved `pd-*` pattern verbatim under an `sd-*` prefix:
+same `activeImage` state shape, same fixed `116x116` thumbnail rail,
+same `aspect-ratio: 663/900` main image, same `object-fit: cover`
+throughout (still the real `productImages` array — no data change).
+
+Price/size-row typography matches `pd-price`/`pd-size-row` exactly
+(`28px`/`600` price, contrast-checked color already proven there; size
+shown as `ProductSize`'s real single value in an inert label, not a
+fake S/M/L/XL picker — same precedent, reused not reinvented).
+
+Added the second "Buy Now" button, wiring in `buyNowHandler`
+(`addToCartHandler` then `history.push("/checkout")`) — literally the
+same shape as `ProductDetails.tsx`'s existing handler, not a new one.
+
+Removed the old duplicate `<Box className="title">Product Detail</Box>`
+— Breadcrumb (Session 1) already renders the real "Shop Detail" heading;
+this resolves the known, deliberately-temporary duplication flagged in
+Session 1's notes.
+
+`averageRating`/`productViews` (real, already-wired data with no
+counterpart in the reused `pd-*` pattern) were kept and restyled into a
+new `.sd-meta-row` rather than dropped — genuine product data, not
+mockup filler, so the "reuse verbatim" instruction didn't extend to
+removing real functioning features the pattern itself simply never had
+to handle.
+
+### Session 5 — restaurant→product renaming + content decision
+
+**Content decision, not just a rename**: `ChosenProduct.tsx` was
+showing the **admin member's** nickname and phone number in a slot
+Figma's Shop Detail frame has no equivalent for — a real content bug,
+not a styling one, first flagged when this was originally built.
+Confirmed there's no seller/vendor concept anywhere in this
+single-tenant store (one admin, not a marketplace), so there's no real
+content that could replace it. Dropped the block entirely rather than
+keep surfacing internal admin contact details to customers.
+
+Mechanical rename followed from removing the only real consumer of the
+`restaurant` naming: `retrieveRestaurant` (`selector.ts`), `setRestaurant`
++ the `restaurant` field on `ProductPageState` (`slice.ts`, and its type
+in `lib/types/screen.ts`) all removed — not just renamed, since nothing
+in `ChosenProduct.tsx`/`Products.tsx` needs any representation of "who
+sells this" once the admin-info block itself is gone. `Products.tsx`'s
+long-dead `setRestaurant`/`setChosenProduct` imports (flagged as unused
+in a much earlier ESLint pass, `NEXT_STEPS.md`) are also gone as a
+result.
+
+Two now-orphaned pieces flagged in `NEXT_STEPS.md` rather than touched
+in this pass (outside these sessions' explicit file scope):
+`MemberService.getRestaurant()` (`services/MemberService.ts`, no longer
+called anywhere) and the `swiper`/`swiper/react` npm dependency
+(`ChosenProduct.tsx` was its only real consumer).
+
+### Verification
+
+`npx tsc --noEmit` and `npm run build` clean throughout (final bundle:
+-25kB gzipped JS, -3kB gzipped CSS, from the Swiper removal and dead
+MUI imports). Live Playwright checks at 1920/1440/390 for each
+sub-session: Session 3's results count/sort/pagination confirmed with
+real data; Session 4/5's combined Shop Detail state confirmed
+programmatically (`breadcrumbHeading: "Shop Detail"`,
+`duplicateTitleExists: false`, `restaurantBlockExists: false`, real
+`sdTitle`/`sdPrice`/`sdSizeValue`/thumbnail count/main image src all
+present) at every width, screenshots visually confirmed the mobile
+stacked layout (image on top, thumbnail row below) matches the reused
+`pd-*` breakpoint behavior. Zero browser console/page errors on either
+page.
