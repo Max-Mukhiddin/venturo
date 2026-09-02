@@ -1368,3 +1368,520 @@ by `--vt-hero-height`, untouched by this fix) — confirmed no visual
 regression via screenshot at 1920/1536/1440/390 and the real window.
 `NEXT_STEPS.md`'s entry marked resolved (kept, not deleted, per the
 existing convention).
+
+## Session — Real hero photography (Section 1), replacing flat placeholder panels
+
+The hero's two split panels used flat `#ebebe8`/`#d9d9d9` fills (the
+Figma AdobeStock layers were unexported placeholders). Replaced with
+real photography.
+
+### Source — the real Unsplash Search API, not the dead keyless endpoint
+
+The originally-requested `source.unsplash.com` was checked first and
+confirmed dead — a `503 Application Error` from a defunct Heroku app
+(Unsplash deprecated it; verified 3x, not a transient blip), and its
+would-be fallback `picsum.photos` has no topical/keyword search at all
+regardless. Flagged to the user before proceeding; the user supplied a
+real `UNSPLASH_ACCESS_KEY` (added to the already-gitignored
+`.env.local` in the frontend repo, not `.env`, which is tracked —
+confirmed `.env.local` is genuinely untracked via `git ls-files` before
+and after). Used Unsplash's real Search Photos API
+(`api.unsplash.com/search/photos`) with that key.
+
+### What was searched and chosen
+
+Two searches (`hiking mountain sunset`, `hiker backpack trail`), 5
+results each, visually reviewed via downloaded preview thumbnails before
+choosing:
+
+- **Left panel**: [Diego Gennaro — "Sunset at the top of Piltriquitron, El Bolsón, Rio Negro, Argentina"](https://unsplash.com/photos/silhouette-of-person-standing-on-rock-during-sunset-JNb0yIiIaQc) (photographer: https://unsplash.com/@_nnaro_)
+- **Right panel**: [lucas Favre — "man in blue and black backpack standing on rock formation during daytime"](https://unsplash.com/photos/man-in-blue-and-black-backpack-standing-on-rock-formation-during-daytime-5B-I62BwJ5E) (photographer: https://unsplash.com/@we_are_rising)
+
+Chosen over the other candidates for sharing warm golden-hour lighting
+and both featuring a lone hiker figure — a matched pair, and a clear
+narrative fit for an adventure-gear brand. License: Unsplash License
+(free for commercial use, no attribution legally required —
+https://unsplash.com/license); credited here anyway as good practice.
+Downloaded the `regular` size (1080×720, not the low-res `thumb`) via
+curl into `public/img/hero-left.jpg`/`hero-right.jpg`. Per Unsplash's
+API Guidelines, triggered a GET to each photo's real
+`links.download_location` endpoint once (required when a photo is
+actually used, not just browsed) — confirmed 200 responses from both.
+
+### Real problems found and fixed along the way
+
+- **CSS `url()` doesn't work for public-folder assets in this CRA
+  project**: `background-image: url("/img/hero-left.jpg")` in the CSS
+  file failed the build — `Module not found: Error: Can't resolve
+  '/img/hero-left.jpg' in '.../src/css'`. CRA's css-loader tries to
+  resolve a CSS `url()` as a webpack module import, which fails for a
+  path that only exists in `public/`, not `src/`. No precedent for this
+  pattern exists anywhere else in the codebase — every other public
+  asset is referenced as a plain runtime string
+  (`<img src="/icons/...">`). Fixed by setting `backgroundImage` inline
+  in `HomeNavbar.tsx` instead, matching that existing convention;
+  `background-size`/`background-position` stayed in the CSS file.
+- **Text illegible against the real photos, confirmed by actual
+  measurement, not eyeballing**: built a real pixel-sampling script
+  (Playwright screenshot → canvas → WCAG relative-luminance contrast
+  ratio) rather than judging by eye. Initial directional panel-wide
+  gradient measured **1.01:1** contrast behind "Hot Deals" — the photo's
+  brightness swings enormously from bright sky at the text block's top
+  to already-dark rock at its bottom, which a single directional
+  gradient can't track. Switched to a scrim sized to each text block
+  itself (`::before` on `.hm-hero-copy`/`.hm-hero-offer`, padded inset,
+  `backdrop-filter: blur`, rounded corners) — guarantees contrast
+  regardless of what's behind it at any point, not just tuned to look
+  right in one screenshot.
+  **Found and documented a real ceiling, not silently claimed full
+  compliance**: the design's own `#707262` olive eyebrow/body text color
+  tops out at a **maximum possible 4.27:1** contrast ratio against pure
+  black (WCAG AA normal-text requires 4.5:1) — mathematically
+  unreachable without changing the text color, which was explicitly
+  ruled out. Landed the scrim at **3.63:1** measured — passes AA for
+  large text (3:1) comfortably and is close to that ceiling. The white
+  "Get 25% Off" text on the right panel has no such ceiling (tops out
+  around 21:1) and is comfortably past AA at the chosen opacity.
+- **Mobile regression from the scrim fix, caught by re-measuring, not
+  assumed fine**: `.hm-hero-copy`'s mobile breakpoint sets
+  `position: static`, which broke the scrim's `::before`
+  positioning — a `position:absolute` pseudo-element needs its own
+  parent to be a positioning context, and `static` sent it escaping
+  upward to `.hm-hero` instead, detached from the text. Fixed to
+  `position: relative` (preserves normal flow, restores the containing
+  block) — but doing so re-activated the base desktop rule's
+  `left: calc(var(--vt-gutter) + 58px)` offset (which `static` had been
+  silently ignoring), shifting the whole mobile copy block ~78px
+  off-centre and clipping text against the viewport edge. Caught via
+  live re-measurement (`boundingBox()` showing `x: 98` instead of the
+  expected `20`), fixed by explicitly resetting `left: auto` alongside
+  `position: relative`. Also: the scrim itself is hidden entirely on
+  mobile (`.hm-hero-copy::before { display: none; }`) — mobile's copy
+  block sits below the stacked image on the plain `#ebebe8` ground, not
+  over a photo, so a dark card there would be an unexplained visual
+  element with nothing to justify it.
+
+### Files
+
+| File | Change |
+|---|---|
+| `public/img/hero-left.jpg`, `hero-right.jpg` | New real photography, downloaded from Unsplash |
+| `src/app/components/headers/HomeNavbar.tsx` | Inline `backgroundImage` style on both hero panels |
+| `src/css/navbar.css` | `background-size`/`position: cover`/`center` on panels; scrim `::before` on `.hm-hero-copy`/`.hm-hero-offer`; mobile-breakpoint fixes for the scrim's positioning context and the reactivated `left` offset |
+| `venturo-react/.env.local` (not `.env`) | `UNSPLASH_ACCESS_KEY` — gitignored, confirmed untracked |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window. Hero height unchanged from before this session at every
+width (1920/1536/1440: 702px; 390: 756px) — confirmed no layout shift.
+Contrast re-measured after every fix, not just visually re-checked:
+eyebrow text 1.01:1 → 3.63:1 (against a mathematically-confirmed 4.27:1
+ceiling for this text color). Mobile copy block confirmed centred
+(`x: 20`, matching the gutter) after the `left: auto` fix, no clipping.
+Zero page errors.
+
+## Session — Real Shop by Category photography (Section 3)
+
+`ShopByCategory.tsx`'s 5 flat `#d9d9d9` cards replaced with real
+photography, same pipeline as the hero (real Unsplash Search API,
+`.env.local` key, `regular`-size downloads, required
+`download_location` tracking call per photo).
+
+### Correction to the task's premise, checked before building
+
+The task described the category label as "overlaid text at the bottom"
+of the photo. Checked against both the live markup and the real Figma
+node (`2479:1302`) before assuming that was true: it isn't. The label
+(`sbc-card-label`) is a separate caption *below* the 450px media block
+(`margin-top: 32px`, not `position: absolute`), and the Figma source
+places the label text at y=1678 — well below the media block's own
+bottom edge at y=1642. It sits on the section's plain white background,
+not on the photo. Legibility was still measured, not skipped on the
+strength of this correction alone (see below).
+
+### The 5 photos
+
+Real Unsplash Search API (`api.unsplash.com/search/photos`), one search
+per category tied to the real `ProductCollection` each card links to
+(not the marketing label), 5 results each, picked visually from
+downloaded preview thumbnails:
+
+| Category (label) | Collection | Photo | Photographer |
+|---|---|---|---|
+| Climbing | `CLIMBING` | ["Going Up, Smith Rock State Park, Oregon"](https://unsplash.com/photos/man-in-black-shorts-climbing-brown-rock-formation-during-daytime-VnmbcgAfL3Q) | Sean Benesh (https://unsplash.com/@seanbenesh) |
+| All Brand Tenting | `CAMPING` | ["Camping Under the Stars"](https://unsplash.com/photos/brown-dome-tent-near-trees-at-night-8f_VQ3EFbTg) | Josh Hild (https://unsplash.com/@joshhild) |
+| Warm & Cool Jacket | `APPAREL` | ["a person with a backpack standing on a cliff"](https://unsplash.com/photos/a-person-with-a-backpack-standing-on-a-cliff-StfgyoFRnwE) | Alexander Kaufmann (https://unsplash.com/@alexander_kaufmann) |
+| Hiking Shoes | `FOOTWEAR` | ["...standing on rock during daytime"](https://unsplash.com/photos/person-in-black-pants-and-brown-leather-boots-standing-on-rock-during-daytime-4s-obffdob0) | Ali Kazal (https://unsplash.com/@lureofadventure) |
+| Trekking | `TREKKING` | ["person admires scenic mountains and a sunny sky"](https://unsplash.com/photos/person-admires-scenic-mountains-and-a-sunny-sky-Mkvr1r3704o) | Samuel Malmström (https://unsplash.com/@samuelmalm) |
+
+Chosen for a cohesive look across the row (each features a lone
+adventurer figure against a dramatic landscape, matching the hero
+photos' narrative) and for surviving a portrait `cover` crop without
+losing the subject — checked visually per candidate, not just picked
+by description. License: Unsplash License (free for commercial use, no
+attribution legally required — https://unsplash.com/license); credited
+above as good practice. Downloaded via curl into `public/img/`, named by
+the real `ProductCollection` value
+(`category-climbing.jpg`/`category-camping.jpg`/`category-apparel.jpg`/
+`category-footwear.jpg`/`category-trekking.jpg`), not the marketing
+label. All 5 `download_location` tracking calls confirmed 200.
+
+### Files
+
+| File | Change |
+|---|---|
+| `public/img/category-*.jpg` (5 files) | New real photography, downloaded from Unsplash |
+| `src/app/screens/homePage/ShopByCategory.tsx` | `CATEGORIES` array gains an `image` field; inline `backgroundImage` style per card (same CRA `url()`-in-CSS workaround established for the hero) |
+| `src/css/home.css` | `.sbc-card-media` gains `background-size: cover; background-position: center;` (previously a flat colour only, no image to size/position) |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window: all 5 images confirmed loading (not the flat fallback
+colour) at every width; card dimensions, gutter offsets, and scroller
+behaviour all unchanged from the placeholder version (390×450, same x
+offsets at every width: 150/117.4/109.2/20px, matching the already-
+proven `--vt-gutter` values). Legibility measured with the same
+pixel-sampling contrast script built for the hero, not assumed from the
+caption-vs-overlay correction alone: **4.92:1** (white section
+background vs. the same `#707262` text) — passes full WCAG AA for
+normal text outright, no scrim needed. Zero page errors.
+
+## Session — Real Banner photography (Section 5)
+
+`Banner.tsx`'s two flat `#d9d9d9` panels ("New Arrivals" / "Best
+Sellers") replaced with real photography, same Unsplash pipeline as the
+hero and Shop by Category.
+
+### Layout confirmed before building, not assumed
+
+Checked `home.css` directly: `.hb-panel-content` (holding the eyebrow,
+heading, and CTA) is a sibling positioned *over*
+`.hb-panel-media` (`position: absolute; inset: 0`) — an overlay layout
+like the hero, not a caption-below layout like Shop by Category. The CTA
+button already has its own solid white fill, so only the eyebrow/heading
+text was ever at legibility risk.
+
+### The 2 photos
+
+Real Unsplash Search API, picked for good negative space (a single
+product shot survives an asymmetric corner-text overlay far better than
+a symmetric flatlay — several flatlay candidates for "New Arrivals" were
+rejected for exactly this reason after previewing them):
+
+| Panel | Photo | Photographer |
+|---|---|---|
+| New Arrivals | ["green and black backpack on brown wooden log"](https://unsplash.com/photos/green-and-black-backpack-on-brown-wooden-log-9aZ3T1q83CM) | Ali Kazal (https://unsplash.com/@lureofadventure) — same photographer as the "Hiking Shoes" category photo, coincidental, not a licensing issue |
+| Best Sellers | ["grey and black hiking backpack and cyan tumbler on grey rock during sunset"](https://unsplash.com/photos/grey-and-black-hiking-backpack-and-cyan-tumbler-on-grey-rock-during-sunset-8sjBzL1IyMo) | Josiah Weiss (https://unsplash.com/@jsweissphoto) |
+
+License: Unsplash License (free for commercial use, no attribution
+legally required — https://unsplash.com/license); credited above as
+good practice. Downloaded via curl into `public/img/` as
+`banner-new-arrivals.jpg`/`banner-best-sellers.jpg`. Both
+`download_location` tracking calls confirmed 200.
+
+### Legibility — measured per breakpoint, not just per panel
+
+Same pixel-sampling contrast script as the hero and Shop by Category,
+but this section surfaced a new lesson: **`background-size: cover`
+recrops the same photo differently at different panel widths**, so a
+single desktop-only measurement isn't sufficient — contrast has to be
+checked at every breakpoint, not just once per panel.
+
+- **New Arrivals**: failed everywhere (1.85:1 at 1920, similar at other
+  desktop widths) against this photo's mid-toned blurred-forest crop.
+  Added a scrim (`.hb-panel-copy-scrim`) sized to the copy block, same
+  technique as the hero. Final measured contrast: 3.97:1 (1920) /
+  3.45:1 (1536) / 3.41:1 (1440) / 4.02:1 (390) — passes the AA
+  large-text threshold (3:1) at every width.
+- **Best Sellers**: passed comfortably on desktop (4.92:1 at every
+  desktop width, its photo's bright-sky crop) — but the *same* panel
+  measured **1.27:1 at 390px**, because the mobile crop centres on a
+  busier, warmer part of the photo. Caught by explicitly re-measuring
+  at all 4 widths rather than assuming the desktop result transferred
+  down. Added a second, mobile-only scrim
+  (`.hb-panel-copy-scrim-mobile`, scoped inside the existing 900px
+  structural breakpoint) — final measured contrast: 3.52:1 at 390px,
+  desktop widths unaffected (still 4.92:1, no scrim applied there).
+
+### A real CSS bug found and fixed along the way
+
+The first scrim attempt (`z-index: -1` on the `::before`) rendered
+completely inert — contrast measured unchanged (1.85:1 → 1.85:1) despite
+the scrim visibly being dark in a screenshot crop. Root cause: none of
+`.hb-panel`/`.hb-panel-content`/`.hb-panel-copy` set `z-index` alongside
+their `position`, so none of them establish an actual CSS stacking
+context — a `z-index:-1` there escapes past all of them and paints
+behind `.hb-panel-media` (the photo) entirely, not just behind the text.
+Removing `z-index` and relying on plain DOM paint order didn't work
+either: per CSS's default painting order, a *positioned* element (even
+at `z-index: auto`) paints **after** normal in-flow inline content
+regardless of DOM order — so the scrim landed on top of the text, not
+behind it (confirmed via screenshot: text was present, at its correct
+computed color, just fully obscured). Fixed by making the stacking order
+explicit rather than relying on default behavior: `z-index: 0` on
+`.hb-panel-copy-scrim` (now a real stacking context, since it has both
+`position` and a non-auto `z-index`) and `z-index: 1` on the eyebrow/
+heading spans inside it.
+
+### Files
+
+| File | Change |
+|---|---|
+| `public/img/banner-new-arrivals.jpg`, `banner-best-sellers.jpg` | New real photography, downloaded from Unsplash |
+| `src/app/screens/homePage/Banner.tsx` | `PANELS` array gains `image`/`needsScrim`/`needsScrimMobile` fields; inline `backgroundImage` style per panel |
+| `src/css/home.css` | `.hb-panel-media` gains `background-size: cover; background-position: center;`; new `.hb-panel-copy-scrim`/`.hb-panel-copy-scrim-mobile` rules with explicit stacking (see above) |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window: both images confirmed loading at every width; panel
+aspect ratio held exactly at 8:7 (1.143) at every width, matching the
+already-established `aspect-ratio: 8/7` — no layout shift. Both hrefs
+confirmed resolving correctly (`/products?order=createdAt`,
+`/products?order=productViews`) at every width via live DOM inspection,
+not just visually. All 8 panel×width contrast combinations re-verified
+≥3.4:1 after the fixes above. Zero page errors.
+
+## Session — Real Highlights photography (Section 6)
+
+`Highlights.tsx`'s flat `#d9d9d9` full-bleed background (2.4:1) replaced
+with a real photo, same Unsplash pipeline as every prior section.
+
+### The photo
+
+[Toomas Tartes — "Hikers on trail toward mountain peaks"](https://unsplash.com/photos/hikers-on-trail-toward-mountain-peaks-Yizrl9N_eDA)
+(https://unsplash.com/@toomastartes). Picked over more posed/close-up
+candidates for: wide landscape format suiting the full-bleed 2.4:1
+section, hikers mid-walk (not posed), a dramatic snow-capped peak fitting
+the "Highlights" framing, and clean negative space specifically in the
+bottom-left region — the only part of the photo actually visible around
+the overlay text, since the opaque product card already covers most of
+the left side top-to-bottom (card is 554px tall inside an 800px-tall
+section; the heading/tick sit in the remaining 246px strip below it, not
+behind the card itself). License: Unsplash License (free for commercial
+use, no attribution legally required); credited above as good practice.
+Downloaded via curl into `public/img/highlights.jpg`.
+`download_location` tracking call confirmed 200.
+
+### Legibility — measured per breakpoint, per the lesson from Banner
+
+Same pixel-sampling contrast script, run at all 4 widths individually
+rather than once — this section turned out not to need any scrim at all,
+but that was confirmed by measurement, not assumed from Banner's
+"sometimes you don't need one" cases:
+
+| Width | Heading visible | Background sample | Contrast ratio |
+|---|---|---|---|
+| 1920 | yes | rgb(133,123,74) | **4.26:1** |
+| 1536 | yes | rgb(103,91,50) | **6.73:1** |
+| 1440 | yes | rgb(18,12,1) | **19.47:1** |
+| 390 | **no** — confirmed hidden (`display:none`), matching the confirmed mobile frame (7:148), which has neither the heading, tick, nor cross markers at all | n/a | n/a, not measured — nothing to measure |
+
+All 3 desktop widths clear the AA large-text threshold (3:1) with
+margin — no scrim needed anywhere. The product card's own background
+was also re-confirmed unchanged (`rgb(245,245,245)`, solid, unaffected
+by the new photo) at every width, not just assumed from the earlier
+session's note.
+
+### Files
+
+| File | Change |
+|---|---|
+| `public/img/highlights.jpg` | New real photography, downloaded from Unsplash |
+| `src/app/screens/homePage/Highlights.tsx` | Inline `backgroundImage` style on `.hl-media` |
+| `src/css/home.css` | `.hl-media` gains `background-size: cover; background-position: center;` (previously a flat colour only) |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window: `2.4` aspect ratio held exactly at every desktop width
+(1920/1536/1440), real photo confirmed loading, card and layout
+unchanged (no layout shift). Mobile (390) confirmed the heading/tick/
+cross markers are genuinely absent via `isVisible()`, not just assumed
+from reading the CSS. Zero page errors.
+
+## Session — Real Instagram grid photography (Section 10)
+
+`Instagram.tsx`'s 6 flat `#d9d9d9` placeholder tiles replaced with real
+photography, same Unsplash pipeline as every prior section. No text
+overlays these tiles (re-confirmed against both the source and the live
+markup — no caption/heading elements at all here, unlike every section
+with an actual legibility concern), so no contrast measurement applied.
+
+### The 6 photos
+
+Six separate searches, one per intended mood, checked against every
+photographer already used elsewhere on the page to avoid repeats:
+
+| Tile | Search term | Photo | Photographer |
+|---|---|---|---|
+| 1 — gear detail | hiking gear detail | ["man in blue shirt and brown pants walking on bridge"](https://unsplash.com/photos/man-in-blue-shirt-and-brown-pants-walking-on-bridge-during-daytime-chEYjgqdJ7k) | Patrick Pahlke (https://unsplash.com/@p_pixels_p) |
+| 2 — friends | friends hiking laughing | ["a man taking a picture of a woman with a camera"](https://unsplash.com/photos/a-man-taking-a-picture-of-a-woman-with-a-camera-4bihbNN517U) | Geoffrey Chevtchenko (https://unsplash.com/@geoffreychevt) |
+| 3 — solo silhouette | silhouette hiker sunset | ["a person with a backpack walking up a hill"](https://unsplash.com/photos/a-person-with-a-backpack-walking-up-a-hill-2LxcsQVV_Vk) | Alisha Limbu (https://unsplash.com/@alisha_limbu) |
+| 4 — campfire | campfire evening camping | ["a close up of a fire in the dark"](https://unsplash.com/photos/a-close-up-of-a-fire-in-the-dark-Q0rPpApx9mY) | Avakyan Artyom (https://unsplash.com/@low2pow) |
+| 5 — trail coffee | camping coffee morning (the suggested "coffee camping trail" returned 0 results — checked, not assumed, before switching terms) | ["person pouring water on silver steel cup"](https://unsplash.com/photos/person-pouring-water-on-silver-steel-cup-GMXwbCx8jcM) | McKayla Crump (https://unsplash.com/@funkmastacrump) |
+| 6 — summit | summit celebration hiker | ["a man standing on a rock overlooking a lake and mountains"](https://unsplash.com/photos/a-man-standing-on-a-rock-overlooking-a-lake-and-mountains-7iLFhbiWNHc) | Susan Flynn (https://unsplash.com/@misssusanflynn) |
+
+License: Unsplash License (free for commercial use, no attribution
+legally required — https://unsplash.com/license); credited above as
+good practice. Downloaded via curl into `public/img/` as
+`instagram-1.jpg` through `instagram-6.jpg`. All 6 `download_location`
+tracking calls confirmed 200.
+
+### Files
+
+| File | Change |
+|---|---|
+| `public/img/instagram-1.jpg` through `instagram-6.jpg` | New real photography, downloaded from Unsplash |
+| `src/app/screens/homePage/Instagram.tsx` | Static `TILES` array replaces the plain tile-count loop; inline `backgroundImage` style per tile |
+| `src/css/home.css` | `.ig-tile` gains `background-size: cover; background-position: center;` (previously a flat colour only) |
+
+### Verification (`tsc` + `build` clean)
+
+Live headless Chromium, full width matrix plus the real measured
+1440×719 window: all 6 real photos confirmed loading at every width;
+tile `aspect-ratio` measured exactly `1.000` (square) at every width via
+live `getBoundingClientRect()`, not just the CSS declaration; grid
+confirmed as a 6-column row ≥900px collapsing to the confirmed 3-column
+(3×2) mobile layout at 390px, matching the mobile frame (7:152). No
+layout shift. Zero page errors.
+
+## Session — Replace QA test catalog with real, customer-presentable products
+
+The `qa_pagination_test_*` catalog (5 items, no images, placeholder
+names/descriptions) was standing in as the entire product catalog since
+early backend testing. Replaced with 7 real products, created through
+`POST /admin/product/create` — the real session-based admin create
+flow — rather than a DB insert. This is the first time that endpoint has
+been exercised with real, varied data; previously it had only ever
+handled a single throwaway test product early in backend development.
+
+### Real admin flow, not a shortcut
+
+Logged in via `POST /admin/login` (session cookie, not JWT — confirmed
+via `/admin/check-me` before proceeding). Checked the actual controller
+(`product.controller.ts`'s `createNewProduct`) and the admin form
+(`views/products.ejs`) before assuming field names — confirmed
+`productImages` is a `multer` array field (max 5 files) and that
+`productStatus` is read directly from the submitted form body, defaulting
+to `PAUSE` when the admin UI's own hidden field is used. Passed
+`productStatus=PROCESS` explicitly on every create call so the products
+are actually live, not silently stuck in the admin form's own default
+paused state.
+
+### The 7 products and their real photos
+
+Each photo sourced individually via Unsplash's Search API (same pipeline
+as every prior photography session), picked for a clean product-focused
+or product-in-use shot rather than a scenic lifestyle image, and checked
+against every photographer already used elsewhere on the site to avoid
+repeats:
+
+| Product | Collection | Price | Size | Left | Photo | Photographer |
+|---|---|---|---|---|---|---|
+| Alpine Ascent Climbing Harness | CLIMBING | $89 | NORMAL | 14 | ["person with blue safety harness on focus photo"](https://unsplash.com/photos/person-with-blue-safety-harness-on-focus-photo-vJICk89hFbU) | DiEGO MüLLER (https://unsplash.com/@di360muller) |
+| 3-Person Dome Tent | CAMPING | $179 | LARGE | 9 | ["a tent pitched up in a field with trees in the background"](https://unsplash.com/photos/a-tent-pitched-up-in-a-field-with-trees-in-the-background-zcCC-17BF6I) | Kampbros (https://unsplash.com/@kampbros) |
+| Trailblazer 40L Hiking Backpack | HIKING | $129 | NORMAL | 17 | ["person holding black and brown Vinta backpack"](https://unsplash.com/photos/person-holding-black-and-brown-vinta-backpack-O_bhy3TnSYU) | Jakob Owens (https://unsplash.com/@jakobowens1) |
+| Summit Trekking Poles (Pair) | TREKKING | $45 | NORMAL | 20 | ["hiking poles rest on dry grass"](https://unsplash.com/photos/hiking-poles-rest-on-dry-grass-QBvikej4dIw) | Vladyslav Tobolenko (https://unsplash.com/@tobolenkoph) |
+| All-Terrain Cycling Helmet | CYCLING | $69 | NORMAL | 12 | ["a black helmet with holes on the side of it"](https://unsplash.com/photos/a-black-helmet-with-holes-on-the-side-of-it-rw8jnGPJpho) | Jan Kopřiva (https://unsplash.com/@jxk) |
+| Insulated Trail Jacket | APPAREL | $149 | LARGE | 8 | ["a man in a hooded jacket standing in the woods"](https://unsplash.com/photos/a-man-in-a-hooded-jacket-standing-in-the-woods-MiAX_a8Qtns) | Rydale Clothing (https://unsplash.com/@rydaleclothing) |
+| Waterproof Hiking Boots | FOOTWEAR | $119 | NORMAL | 16 | ["brown and white lace up boot"](https://unsplash.com/photos/brown-and-white-lace-up-boot-cHxZmiziwMI) | Colton Sturgeon (https://unsplash.com/@coltonsturgeon) |
+
+License: Unsplash License (free for commercial use, no attribution
+legally required — https://unsplash.com/license); credited above as good
+practice. All 7 `download_location` tracking calls confirmed 200 before
+upload. Descriptions are plain, honest one-sentence summaries of what
+each item actually is — no fabricated technical specs (no invented
+denier/weight/temperature-rating numbers), no marketing hype.
+
+### The 5 `qa_` test products — paused, not deleted
+
+`POST /admin/product/:id` with `{ productStatus: "PAUSE" }` for each of
+the 5 remaining `qa_pagination_test_*` items — the same reversible
+mechanism already used elsewhere to remove a product from the public
+`GET /product/all` listing without destroying the underlying test data.
+
+### Verification
+
+`GET /product/all` confirmed to return **exactly 7 products**, zero
+`qa_`-named items, immediately after both the creates and the pauses
+(response captured in full — see chat transcript). Live-checked the
+frontend, not just the API: homepage `Best Products`, `Deals Of The Day`,
+`Highlights`, and `Product Details` sections all confirmed rendering real
+product names (e.g. `Highlights` → "Alpine Ascent Climbing Harness",
+`Product Details` → "3-Person Dome Tent" — the current highest-priced
+item, matching that section's real sort); `/products` listing and a
+product detail view also checked. Zero occurrences of
+`qa_pagination_test` text anywhere on either page. Uploaded product image
+confirmed actually loading (not broken) via live `naturalWidth`/`complete`
+check against the real `uploads/products/` path.
+
+No frontend code changes were needed or made — this was pure backend
+data, confirmed via `git status` in the frontend repo before considering
+this done.
+
+## `ActiveUsers.tsx` restyled to HikMali conventions (frontend)
+
+Resolves the "`ActiveUsers.tsx` needs a HikMali-consistent restyle" flag
+in `docs/ai/NEXT_STEPS.md`. Real top-viewed member data
+(`retrieveTopUsers` / `MemberService.getTopUsers()`) was already correct
+and untouched — this was purely a visual rebuild.
+
+Dropped `@mui/joy` entirely (`Card`, `CardOverflow`, `AspectRatio`,
+`CssVarsProvider`, `Typography`) — `ActiveUsers.tsx` was the last
+remaining consumer in the codebase, confirmed via
+`grep -rn "@mui/joy" src/` returning zero import matches after the
+rewrite. Replaced with plain `className` markup on `home.css`, matching
+how `Footer` dropped `styled-components` earlier in this rebuild.
+`@mui/joy` also removed from `package.json`/`package-lock.json`
+(`npm uninstall @mui/joy --legacy-peer-deps`, required because of a
+pre-existing `@material-ui/core@4` vs `@mui@7` peer-dep conflict
+unrelated to this change). Production bundle shrank ~20 kB gzipped as a
+result.
+
+No dedicated HikMali Figma node exists for this section (it has no
+counterpart among the 12 real HikMali sections — kept from the old Burak
+build specifically for its live data wiring). Per the task's explicit
+instruction, checked the Testimonial section (node `7:122`) as the
+closest real design anchor instead of inventing proportions: circular
+`size-[58px]` avatar photo, Montserrat Medium 14px name, `#aeb192` 14px
+secondary line, `#f5f5f5` card background with `4px 4px 4px
+rgba(0,0,0,0.1)` shadow. Reused the same circular shape, Montserrat
+weights, and palette, scaled up to 140px since this section highlights a
+single featured member rather than a small review credit — proportions
+justified by, not copied verbatim from, the anchor.
+
+New markup: `.active-users > .au-inner > (.au-title, .au-row >
+.au-card > (.au-avatar, .au-nickname))`. Uses `--vt-gutter`,
+`--vt-content-max`, `--vt-section-y` tokens (no new tokens introduced),
+Montserrat font stack, `#707262`/`#f5f5f5`/`#aeb192` palette — consistent
+with every other rebuilt homepage section. `member.memberImage ||
+"/icons/default-user.svg"` fallback logic preserved character-for-character.
+
+Old unscoped `.cards-frame`/`.member-nickname`/`.nickname`/`.no-data`
+selectors in `home.css` fully removed and replaced with scoped
+`.active-users .au-*` selectors. Confirmed via
+`grep -rn "cards-frame|member-nickname|active-users-frame|no-data" src/app`
+that `Products.tsx` (productsPage) also uses a bare `.cards-frame`/
+`.no-data` pair — unaffected, since the old `home.css` rules were already
+scoped under `.homepage` and Products.tsx isn't nested there; the new
+`.active-users`-scoped rules make the separation unambiguous either way.
+
+Also resolves the `'ProductCollection' is defined but never used`
+ESLint warning previously flagged for this file in
+`docs/ai/NEXT_STEPS.md` (the whole file was rewritten; that unused
+import no longer exists).
+
+### Verification
+
+`npx tsc --noEmit` clean, `npm run build` succeeds (no new warnings —
+all ESLint output is pre-existing and unrelated). Live Playwright
+screenshots at 1920/1536/1440/390 plus the real measured 1440×719
+window: `qa_tester_002` (the real top-viewed member) renders correctly
+at every width, circular avatar with correct 140×140 box confirmed via
+`boundingBox()`, zero `[class*='Joy']` elements found on the page at any
+width. Full-page screenshot at 1440 confirmed no layout shift in
+Free Shipping (above) or Footer (below) — section flows cleanly between
+them.

@@ -622,3 +622,12 @@ copy was invented.
   the existing Email and Message fields using the same markup pattern;
   worth a look during the visual pass to make sure it reads naturally in
   the final layout, not just functionally present
+
+## `ActiveUsers.tsx` restyle — resolved
+
+The "`ActiveUsers.tsx` needs a HikMali-consistent restyle" item above
+(and the `'ProductCollection' is defined but never used` ESLint flag for
+this file, listed in the ESLint warnings section further down) are both
+resolved — see `docs/ai/COMPLETED_TASKS.md` for the full writeup.
+Left the original entries above in place per this doc's append-only
+convention rather than deleting them.
