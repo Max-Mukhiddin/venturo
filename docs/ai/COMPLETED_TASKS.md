@@ -1966,3 +1966,99 @@ needed or made.
 No frontend repository changes in this session — pure backend data
 session, confirmed via `git status` in the frontend repo before
 considering this done.
+
+## Session — Homepage image/design audit and fix pass (frontend + admin data)
+
+### Task 1: Product image sizing fixed across every homepage card
+
+Root cause: `.bp-card-media img` (Best Products) and `.pd-main-image`
+(Product Details) both used `max-width/max-height: ~60-68%` +
+`object-fit: contain` + `opacity: 0.65` — a leftover treatment from
+before real product photography existed, sized for a small faded
+placeholder icon rather than a real photo. Any source photo not close to
+square rendered visibly smaller than the others in the same row (worst
+case: Alpine Ascent Climbing Harness's wide/short photo, which
+`object-fit: contain` shrank hard to fit `max-height`), producing the
+"3 consistent + 1 oddly small" symptom.
+
+Fixed in `src/css/home.css`:
+- `.bp-card-media`: fixed `height: 320px` (`220px` at the ≤900px
+  breakpoint) instead of a flex-grow filler; `.bp-card-media img` now
+  `width/height: 100%` + `object-fit: cover` (opacity/max-width/contain
+  removed).
+- `.pd-main-image`: same change — `100%`/`100%`/`cover`, no more
+  68%-scaled faded placeholder look.
+- `.pd-thumb img`: `object-fit: contain` → `cover`, for the same
+  uniform-fill reasoning (the container is already a fixed 116×116/
+  107×107 box).
+- Since `.bp-card-media`/`.pd-main-image` no longer flex-grow to
+  absorb variable description-text height, `.bp-add`/`.dd-add` (the
+  "Add To Cart" bar) now get `margin-top: auto` so they stay pinned to
+  the card's bottom edge regardless of description length — preserving
+  the original "flush to bottom" design intent documented in the code
+  comment there.
+
+**Real bug found beyond sizing**: `DealsOfTheDay.tsx` rendered no
+product image at all — no `<img>`, no `dd-card-media` element, nothing
+in the JSX or CSS. Added a `dd-card-media` block (same
+`serverApi`/`productImages[0]` fallback pattern used everywhere else)
+to `DealsOfTheDay.tsx`, plus a matching `.dd-card-media`/`.dd-card-media
+img` CSS block mirroring the fixed Best Products treatment. Also removed
+`.dd-card`'s `justify-content: space-between` (was spacing the now-3
+children apart instead of stacking them; replaced by the same
+`margin-top: auto` button-pinning approach as Best Products).
+
+Highlights' single card was checked and left as-is — by design (see the
+existing code comment) it has no per-card product photo; the section's
+large lifestyle background photo is the only image there, already
+`background-size: cover`.
+
+Verified by live Playwright screenshots at 1920/1440/390 of Best
+Products, Deals Of The Day, and Product Details: all 4 cards in each
+grid now render their photos at identical visual size/proportion
+regardless of source aspect ratio, confirmed by eye against the actual
+render, not just the CSS diff. `npx tsc --noEmit` and `npm run build`
+both clean.
+
+### Task 2: Active Users now surfaces a real new member
+
+`getTopUsers` sorts by `memberPoints` (`$gte: 1`, limit 4) — the 3
+members created in the prior session all had the JSON-signup default of
+`0`, so `qa_tester_002` (`memberPoints: 3`) kept winning by design, not
+bug. Fixed via the real `POST /admin/user/edit` endpoint (JSON body
+`{ _id, ...fields }` straight into `findByIdAndUpdate`, same
+authenticated `Admin` session as Task 1's prior photo swap) — no DB
+shortcut: set `noah_backcountry`'s `memberPoints` to `5` (a real value
+chosen higher than `qa_tester_002`'s existing `3`, not an arbitrary
+large number).
+
+`GET /member/top-users` now returns `noah_backcountry` first,
+`qa_tester_002` second. Live-checked `ActiveUsers.tsx`: renders both,
+`noah_backcountry`'s real photo correctly filling the existing 140px
+circular avatar treatment, first in order. No frontend code changes
+needed — the component already handled an arbitrary-length array
+correctly.
+
+### Task 3: Full top-to-bottom visual pass
+
+Screenshotted the entire homepage at 1920 and 390 (plus the individual
+section crops at 1920/1440/390 used for Tasks 1-2) and reviewed every
+section against the fixes above: Banner, Shop by Category, Best
+Products, Highlights, Deals Of The Day, Product Details, Instagram,
+Free Shipping, Active Users, Footer. Grepped `home.css` for any other
+lingering `object-fit: contain` / faded-opacity "placeholder" patterns
+beyond the ones already found — none remained; the one other
+`object-fit: contain` (`.fs-icon`, Free Shipping's small SVG trust-badge
+icons) is correct as-is, since icons should never be `cover`-cropped.
+Confirmed zero browser console/page errors on load. No other visually
+broken or unfinished elements found beyond what Tasks 1-2 already fixed.
+
+### Files changed (frontend repo)
+
+`src/css/home.css` (`.bp-card-media`, `.bp-add`, `.dd-card`,
+`.dd-card-media` new, `.dd-add`, `.pd-thumb img`, `.pd-main-image`),
+`src/app/screens/homePage/DealsOfTheDay.tsx` (added the missing image
+markup + `serverApi` import).
+
+No backend code changes — Task 2 used the existing real
+`POST /admin/user/edit` endpoint as-is.
