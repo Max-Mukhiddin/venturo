@@ -2187,3 +2187,92 @@ homepage top-to-bottom, plus targeted section crops and hover-state
 captures throughout. Zero browser console/page errors on load
 (`pageerror`/`console.error` listeners, confirmed empty). No frontend
 regressions found in any section not explicitly touched this session.
+
+## Session — Highlights missing product image + Products/ChosenProduct image-fill audit
+
+### Highlights.tsx: real missing-image gap, confirmed against the actual reference theme
+
+`Highlights.tsx`'s product card rendered name + description + "Add To
+Cart" only — genuinely no `<img>`/background-image for the product photo
+anywhere in the JSX or CSS, confirmed by reading the file directly
+before changing anything (matches what was reported). Compared directly
+against the real HikMali reference theme screenshots (not just the
+earlier Figma data pull): the card should show the product's own photo
+dominating the card, with a compact name/button footer below — the same
+shape every other product card on the page already has.
+
+Fixed by adding `hl-card-media` (real `product.productImages[0]` via
+`serverApi`, same `/icons/noimage-list.svg` empty-array fallback used
+everywhere else in the project) using the identical fixed-height +
+`object-fit: cover` treatment as `bp-card-media`/`dd-card-media` from
+the prior session — not the hover-reveal overlay those two grid
+sections use, since Highlights is a single hero card (not a repeating
+row) and the reference shows its caption always visible, not hidden
+until hover. `hl-card-info`'s `padding-top` reduced from `60px` to
+`20px` (was sized to vertically balance an image-less card) and
+`hl-add` pinned via `margin-top: auto`, matching `bp-add`/`dd-add`'s
+existing pattern. Card kept its fixed Figma-authored `390×554`
+(desktop) / `480px`-min (mobile) size — unlike the grid sections, there
+is no sibling row to keep height-uniform, so this stayed a fixed size
+rather than becoming content-driven.
+
+Verified live at 1920 and 390: real photo (`Alpine Ascent Climbing
+Harness`) confirmed loading from `uploads/products/`, `object-fit:
+cover` confirmed via computed style, card height unchanged, screenshots
+compared directly against the reference layout — image now dominates,
+name/desc/button read as a compact footer, matching proportion.
+
+Systematic re-check for the same class of gap: grepped every homePage
+component plus `ProductsPage`/`ChosenProduct` for `productImages`
+usage — `BestProducts`, `DealsOfTheDay`, `ProductDetails` already
+render real images (fixed in the prior session); `Highlights` is the
+only one that was missing it entirely, now fixed.
+
+### Products (Shop List) / ChosenProduct: narrow image-fill audit
+
+Both `Products.tsx` and `ChosenProduct.tsx` were checked and confirmed
+to be **entirely unmigrated Burak-era pages** — not a small styling gap.
+Live computed-style check (not just a visual glance — the "Product
+Detail" heading's `Dancing Script` font isn't actually loaded anywhere
+in the project, so it silently falls back to a plain serif and briefly
+looked deceptively "already redesigned" before checking
+`getComputedStyle` directly) confirmed `#f8f8ff` backgrounds,
+`Dancing Script`/`Roboto Serif` fonts, and the old gold/purple Burak
+accent palette are still fully live on both pages. This is the same
+scale of work as the ActiveUsers or Footer migrations, each its own
+session — already flagged in full in `docs/ai/NEXT_STEPS.md`'s "Phase
+2 — Products list" / "Phase 3 — Product detail" sections (full re-theme,
+the Burak-branded "Our Family Brands" logos, the placeholder South
+Korea map). Given the scale mismatch with a same-day pass, checked with
+the user before proceeding rather than either silently doing a
+multi-page redesign or silently under-delivering — confirmed: narrow
+fix only, full migration stays deferred as already documented.
+
+Within that narrow scope:
+- `Products.tsx`'s list-card image (`.MuiCardMedia-root`) was already
+  correct — `object-fit: cover !important`, confirmed via live computed
+  style (273×275, no distortion). No fix needed.
+- `ChosenProduct.tsx`'s main slider image (`.slider-image`) had **no
+  `object-fit` at all** — the real bug. Default `object-fit: fill`
+  visibly stretched the real product photo (1080×720 native) to match
+  the swiper box's own ratio (601×480 at 1920px), distorting it.
+  Confirmed via computed style before and after: `fill` → `cover`.
+  Added `object-fit: cover` to `products.css`'s `.slider-image` rule,
+  same treatment used everywhere else this session.
+- No other missing-image gaps found on either page — both already
+  render a real `<img>`/`CardMedia` bound to `productImages[0]` with
+  the standard empty-fallback convention.
+
+(`ordersPage/FinishedOrders.tsx`/`PausedOrders.tsx`/`ProcessOrders.tsx`
+also reference `productImages` — outside this pass's named scope
+(homePage + Products/ChosenProduct only), left untouched; noting for
+visibility, not fixed.)
+
+### Verification
+
+`npx tsc --noEmit` and `npm run build` clean. Live Playwright screenshots
+of Highlights (1920/390, before/after) and both Products pages
+(list + detail, before/after the `object-fit` fix). Computed-style
+checks throughout rather than trusting renders at a glance — this is
+what caught the `Dancing Script` fallback-font false positive on
+`ChosenProduct.tsx`.
