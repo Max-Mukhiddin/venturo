@@ -7,7 +7,7 @@ import {
   LoginInput,
   Member,
   MemberInput,
-  MemberUpdateInput,
+  MemberProfileUpdateInput,
 } from "../libs/types/member";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import AuthService from "../models/Auth.service";
@@ -104,7 +104,7 @@ memberController.getMemberDetail = async (
 memberController.updateMember = async (req: ExtendedRequest, res: Response) => {
   try {
     console.log("updateMember");
-    const input: MemberUpdateInput = req.body;
+    const input: MemberProfileUpdateInput = req.body;
     if (req.file) input.memberImage = req.file.path.replace(/\\/, "/");
     const result = await memberService.updateMember(req.member, input);
 
