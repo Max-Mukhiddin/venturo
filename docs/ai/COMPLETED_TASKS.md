@@ -2934,3 +2934,66 @@ Validation: `npx tsc --noEmit` passed, `npm run build` passed, schema validation
 covered valid and invalid FAQ documents without a database connection, and
 `git diff --check` passed. Compiler-generated untracked files from `npm run build`
 were removed without touching tracked browser JavaScript files.
+
+## Session — Blog List / Blog Detail (frontend)
+
+Built the real Blog List (`/blog`) and Blog Detail (`/blog/:slug`) pages in
+`venturo-react` against Figma "HikMali" nodes `2465:2715` and `2470:109`,
+using only the real `Article` fields (`title`, `slug`, `content`, `category`,
+`createdAt`) confirmed live in the prior Article session. No mobile Figma
+frame exists for either node (confirmed via cached metadata — only the 5
+homepage sections have "mob" siblings), so the ~900px stacked-layout
+breakpoint is a conservative fluid step-down, not a verified mobile value,
+same convention as Shop List/Shop Detail.
+
+Fabricated-content decisions (no backend field → omitted, not invented):
+author byline, read time, comment count ("42 Comments"), the named reader
+quote block, the bulleted "key points" list, "Tags", and per-article cover
+photos (`Article` has no image field — every thumbnail/hero slot uses the
+existing `/icons/noimage-list.svg` fallback). Flagged the missing cover-image
+field below.
+
+Given the real, confirmed-live gap that `GET /article/all` has no
+pagination or category filtering (documented in the prior session), Blog
+List fetches the full unfiltered list once and does real client-side
+search/category filtering/pagination (`POSTS_PER_PAGE = 3`) over the
+already-fetched 6 real articles — never implying more data exists than
+does. Category filter and Recent Posts counts are computed from the same
+real fetched list, not fabricated. Blog Detail derives the current
+article plus real Previous/Next neighbors from that same one real list by
+array index (both `/article/all` and `/article/:slug` apply the identical
+PUBLISHED-only filter, so this is equivalent to, not a workaround for, a
+second real request).
+
+The sidebar promo panel reuses the already-downloaded real photo
+`/img/shop-detail-banner.jpg` (from an earlier Shop Detail session) at a
+new `415/623` portrait crop, with the same real "Best Enjoyed Outside" →
+`/products` copy already established there (the fabricated "Upto 50% Off"
+discount line was dropped, same precedent as elsewhere). Measuring this
+new crop's white heading text against the raw photo (no scrim) gave
+2.51-4.25:1, failing WCAG for normal text — added a bottom-anchored
+`rgba(8,9,7,0.75)→transparent` gradient scrim (same solid-scrim technique
+as the homepage banner's `.hb-panel-copy-scrim`), re-measured at
+7.04-8.50:1 after the fix, confirmed both by pixel-sampling the rendered
+composite and visually.
+
+Added a real "Blog" link to the Footer's existing "Help" nav column
+(already the site's real content/resources destination — Contact,
+Account, FAQs) rather than the main top nav or a new column, avoiding the
+Shop/Learn duplication already resolved there.
+
+**Verified live** (Playwright, `localhost:3000`) at 1920/1536/1440/390 +
+the real 1440x719 window: Blog List renders all 6 real articles across 2
+real pages (3 per page), real per-category counts (3 Gear Guides/1 Trip
+Reports/1 News/1 Tips, matching the real dataset), real Recent Posts (3
+items). Blog Detail renders a real title/category/date/full content, real
+Previous/Next neighbors by real sort order, and a real "doesn't exist or
+isn't published" state for an invalid slug. Zero fabricated strings
+("42 Comments", "Emma White", "Lorem Ipsum", "Upto 50%", "Tags") render
+anywhere — grepped the built source, present only inside doc comments
+explaining what was omitted.
+
+**Validation**: `npx tsc --noEmit` and `npm run build` clean (frontend).
+Backend confirmed compiling cleanly (`npx tsc --noEmit`, clean tree) before
+starting, per repo-safety check — no backend code was touched, only this
+docs file.

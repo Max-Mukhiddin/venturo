@@ -734,3 +734,16 @@ should replace this file entirely (it's marked as a temporary stub in
 its own header comment) rather than extend it in place — it was not
 designed as a real starting point, only as the minimum needed to
 compile.
+
+## `Article` has no image/cover-photo field
+
+The Blog List/Blog Detail frontend session (Figma nodes `2465:2715` /
+`2470:109`) confirmed `Article` has no field for a cover or thumbnail
+image — every thumbnail/hero slot in both pages falls back to the shared
+`/icons/noimage-list.svg` "no image" glyph instead of a real photo,
+which the Figma designs clearly call for (a large hero image on Blog
+Detail, a thumbnail on every Blog List card and sidebar Recent Posts
+item). Likely fix: add a real `image` (or `coverImage`) string field to
+`Article.model.ts`, wire it through the admin create/update form
+(`articles.ejs`/`articles.js`), and update `article.controller.ts`'s
+response shape accordingly — same pattern as `Product.productImages`.
