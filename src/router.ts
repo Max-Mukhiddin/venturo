@@ -52,6 +52,11 @@ router.get(
   memberController.verifyAuth,
   orderController.getMyOrders
 );
+router.get(
+  "/order/:id",
+  memberController.verifyAuth,
+  orderController.getMyOrder
+);
 router.post(
   "/order/update",
   memberController.verifyAuth,

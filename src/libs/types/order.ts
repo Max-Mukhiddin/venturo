@@ -49,7 +49,7 @@ export interface CreateOrderInput {
 export interface OrderInquiry {
   page: number;
   limit: number;
-  orderStatus: OrderStatus;
+  orderStatus?: OrderStatus;
 }
 
 export interface OrderUpdateInput {

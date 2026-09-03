@@ -12,7 +12,7 @@ import {
 } from "../libs/types/order";
 import orderModel from "../schema/Order.model";
 import orderItemModel from "../schema/OrderItem.model";
-import { ObjectId } from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 import MemberService from "./Member.service";
 
 class OrderService {
@@ -85,41 +85,64 @@ class OrderService {
         { $sort: { updatedAt: -1 } },
         { $skip: (inquiry.page - 1) * inquiry.limit },
         { $limit: inquiry.limit },
-        {
-          $lookup: {
-            from: "orderItems",
-            localField: "_id",
-            foreignField: "orderId",
-            as: "orderItems",
-          },
-        },
-        {
-          $lookup: {
-            from: "products",
-            localField: "orderItems.productId",
-            foreignField: "_id",
-            as: "productData",
-          },
-        },
+        ...this.orderDetailsLookups(),
       ])
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
     return result;
   }
 
+  public async getMyOrder(member: Member, id: string): Promise<Order> {
+    const memberId = shapeIntoMongooseIdObjectId(member._id);
+    const orderId = this.getOrderObjectId(id);
+
+    const result = await this.orderModel
+      .aggregate([
+        { $match: { _id: orderId, memberId } },
+        ...this.orderDetailsLookups(),
+      ])
+      .exec();
+    if (!result[0]) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
+    return result[0];
+  }
+
   public async updateOrder(
     member: Member,
     input: OrderUpdateInput
   ): Promise<Order> {
-    const memberId = shapeIntoMongooseIdObjectId(member._id),
-      orderId = shapeIntoMongooseIdObjectId(input.orderId),
-      orderStatus = input.orderStatus;
+    if (!Object.values(OrderStatus).includes(input.orderStatus)) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_ORDER_STATUS);
+    }
+
+    const memberId = shapeIntoMongooseIdObjectId(member._id);
+    const orderId = this.getOrderObjectId(input.orderId);
+    const orderStatus = input.orderStatus;
+
+    const existingOrder = await this.orderModel
+      .findOne({ memberId, _id: orderId })
+      .exec();
+    if (!existingOrder) {
+      throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
+    }
+
+    if (existingOrder.orderStatus === orderStatus) return existingOrder;
+
+    const allowedTransition =
+      (existingOrder.orderStatus === OrderStatus.PENDING &&
+        orderStatus === OrderStatus.PROCESS) ||
+      ((existingOrder.orderStatus === OrderStatus.PENDING ||
+        existingOrder.orderStatus === OrderStatus.PROCESS) &&
+        orderStatus === OrderStatus.DELETE);
+    if (!allowedTransition) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+    }
 
     const result = await this.orderModel
       .findOneAndUpdate(
         {
-          memberId: memberId,
+          memberId,
           _id: orderId,
+          orderStatus: existingOrder.orderStatus,
         },
         { orderStatus: orderStatus },
         { new: true }
@@ -128,10 +151,41 @@ class OrderService {
 
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
 
-    if (orderStatus === OrderStatus.PROCESS) {
+    if (
+      existingOrder.orderStatus !== OrderStatus.PROCESS &&
+      orderStatus === OrderStatus.PROCESS
+    ) {
       await this.memberService.addUserPoint(member, 1);
     }
     return result;
+  }
+
+  private orderDetailsLookups() {
+    return [
+      {
+        $lookup: {
+          from: "orderItems",
+          localField: "_id",
+          foreignField: "orderId",
+          as: "orderItems",
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "orderItems.productId",
+          foreignField: "_id",
+          as: "productData",
+        },
+      },
+    ];
+  }
+
+  private getOrderObjectId(id: string): ObjectId {
+    if (typeof id !== "string" || !mongoose.isValidObjectId(id)) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
+    }
+    return shapeIntoMongooseIdObjectId(id);
   }
 }
 
