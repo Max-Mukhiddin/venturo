@@ -5,6 +5,7 @@ import productController from "./controllers/product.controller";
 import makeUploader from "./libs/utils/uploader";
 import articleController from "./controllers/article.controller";
 import contactController from "./controllers/contact.controller";
+import faqController from "./controllers/faq.controller";
 
 /** Restaurant **/
 routerAdmin.get("/", restaurantController.goHome);
@@ -90,6 +91,32 @@ routerAdmin.post(
   "/contact/:id",
   restaurantController.verifyRestaurant,
   contactController.updateContactMessageStatus
+);
+
+/** FAQ (JSON-only) */
+
+routerAdmin.get(
+  "/faq/all",
+  restaurantController.verifyRestaurant,
+  faqController.getAllFAQs
+);
+
+routerAdmin.post(
+  "/faq/create",
+  restaurantController.verifyRestaurant,
+  faqController.createFAQ
+);
+
+routerAdmin.post(
+  "/faq/:id",
+  restaurantController.verifyRestaurant,
+  faqController.updateFAQ
+);
+
+routerAdmin.post(
+  "/faq/:id/delete",
+  restaurantController.verifyRestaurant,
+  faqController.deleteFAQ
 );
 
 export default routerAdmin;

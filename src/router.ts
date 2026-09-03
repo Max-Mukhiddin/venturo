@@ -8,6 +8,7 @@ import wishlistController from "./controllers/wishlist.controller";
 import articleController from "./controllers/article.controller";
 import contactController from "./controllers/contact.controller";
 import reviewController from "./controllers/review.controller";
+import faqController from "./controllers/faq.controller";
 /** Member **/
 router.get("/member/restaurant", memberController.getRestaurant);
 router.post("/member/login", memberController.login);
@@ -83,6 +84,10 @@ router.get("/article/:slug", articleController.getArticle);
 /** Contact **/
 
 router.post("/contact/submit", contactController.submitContactMessage);
+
+/** FAQ **/
+
+router.get("/faq/all", faqController.getFAQs);
 
 /** Review **/
 

@@ -2906,3 +2906,31 @@ restored `src/public/js/*` files (now matching HEAD, i.e. no diff), the
 pre-existing uncommitted `router.ts`/`router-admin.ts`/`package.json`
 FAQ-wiring changes from the concurrent session (left as-is, not
 authored here), and the new `faq.controller.ts` stub.
+
+## Session — FAQ Backend Module
+
+Implemented the real MongoDB-backed FAQ module and replaced the temporary
+`501` controller stub. `FAQ` documents contain `faqQuestion`, `faqAnswer`,
+`faqGroup` (`SHOPPING` or `ACCOUNT_SUPPORT`), `faqStatus` (`ACTIVE` or
+`HIDDEN`, default `ACTIVE`), `faqOrder`, and timestamps. The public
+`GET /faq/all` endpoint returns only active entries, projects only the
+frontend fields (`_id`, question, answer, group, order), and explicitly sorts
+Shopping before Account Support, then by ascending order.
+
+Admin JSON CRUD is available at `GET /admin/faq/all`, `POST /admin/faq/create`,
+`POST /admin/faq/:id`, and `POST /admin/faq/:id/delete`. Every route reuses
+`restaurantController.verifyRestaurant`; create/update validate trimmed required
+question and answer, enum group/status values, and non-negative integer order.
+No FAQ EJS management UI was added, matching the existing JSON-only Contact
+admin pattern.
+
+Added the idempotent `npm run seed:faqs` command. It upserts the ten approved
+records by `{ faqGroup, faqQuestion }`, sets their approved content/order and
+`ACTIVE` status, and requires `FAQ_SEED_CONFIRM=true` before it calls
+`mongoose.connect`. The seed was not executed because `.env` points to a remote
+MongoDB database; the guard was confirmed to stop before connecting or writing.
+
+Validation: `npx tsc --noEmit` passed, `npm run build` passed, schema validation
+covered valid and invalid FAQ documents without a database connection, and
+`git diff --check` passed. Compiler-generated untracked files from `npm run build`
+were removed without touching tracked browser JavaScript files.
