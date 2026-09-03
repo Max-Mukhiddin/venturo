@@ -6,6 +6,7 @@ export interface Article {
   title: string;
   slug: string;
   content: string;
+  image?: string;
   category: ArticleCategory;
   status: ArticleStatus;
   createdAt: Date;
@@ -16,6 +17,7 @@ export interface ArticleInput {
   title: string;
   slug: string;
   content: string;
+  image?: string;
   category: ArticleCategory;
   status?: ArticleStatus;
 }
@@ -24,6 +26,7 @@ export interface ArticleUpdateInput {
   _id: ObjectId;
   title?: string;
   content?: string;
+  image?: string;
   category?: ArticleCategory;
   status?: ArticleStatus;
 }

@@ -67,3 +67,21 @@ function autoSlugHandler() {
 $(document).on("input", ".article-slug", function () {
   $(this).data("touched", true);
 });
+
+function previewArticleImageHandler(input) {
+  const imgClassName = input.className;
+  const file = $(`.${imgClassName}`).get(0).files[0];
+  const validImageType = ["image/jpg", "image/jpeg", "image/png", "image/webp"];
+
+  if (!file) return;
+
+  if (!validImageType.includes(file["type"])) {
+    alert("Please insert only jpeg, jpg, webp and png");
+  } else {
+    const reader = new FileReader();
+    reader.onload = function () {
+      $("#article-image-section-1").attr("src", reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+}

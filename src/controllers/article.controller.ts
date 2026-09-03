@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import { T } from "../libs/types/common";
 import { ArticleInput, ArticleUpdateInput } from "../libs/types/article";
+import { AdminRequest } from "../libs/types/member";
 import ArticleService from "../models/Article.service";
 
 const articleService = new ArticleService();
@@ -59,10 +60,14 @@ articleController.getAllArticlesAdmin = async (
   }
 };
 
-articleController.createNewArticle = async (req: Request, res: Response) => {
+articleController.createNewArticle = async (
+  req: AdminRequest,
+  res: Response
+) => {
   try {
     console.log("createNewArticle");
     const input: ArticleInput = req.body;
+    if (req.file) input.image = req.file.path.replace(/\\/g, "/");
     await articleService.createNewArticle(input);
 
     res.send(
@@ -79,13 +84,14 @@ articleController.createNewArticle = async (req: Request, res: Response) => {
 };
 
 articleController.updateChosenArticle = async (
-  req: Request,
+  req: AdminRequest,
   res: Response
 ) => {
   try {
     console.log("updateChosenArticle");
     const id = req.params.id;
     const input: ArticleUpdateInput = req.body;
+    if (req.file) input.image = req.file.path.replace(/\\/g, "/");
     const result = await articleService.updateChosenArticle(id, input);
 
     res.status(HttpCode.OK).json({ data: result });

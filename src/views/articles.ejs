@@ -75,6 +75,7 @@
           action="/admin/article/create"
           method="POST"
           class="dish-container"
+          enctype="multipart/form-data"
         >
           <div class="long-input" style="display: flex; align-items: center">
             <span class="new-dish-txt">NEW ARTICLE DETAIL</span>
@@ -120,6 +121,22 @@
           <div class="long-input">
             <label>Content</label>
             <textarea name="content" class="article-content" rows="10"></textarea>
+          </div>
+
+          <div class="img-frame">
+            <label>Article Image</label>
+            <div class="media-frame">
+              <div class="upload-img-box">
+                <img src="/img/upload.svg" class="1" id="article-image-section-1" />
+                <input
+                  type="file"
+                  id="file"
+                  name="articleImage"
+                  class="article-image-one"
+                  onchange="previewArticleImageHandler(this)"
+                />
+              </div>
+            </div>
           </div>
 
           <div class="operation-buttons">

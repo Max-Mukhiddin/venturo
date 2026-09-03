@@ -2997,3 +2997,120 @@ explaining what was omitted.
 Backend confirmed compiling cleanly (`npx tsc --noEmit`, clean tree) before
 starting, per repo-safety check — no backend code was touched, only this
 docs file.
+
+## Session — Real Blog article images + Blog nav link
+
+Two scoped tasks: give the 5 real articles real per-post photography
+(closing the "no image field" gap the Blog List/Detail session flagged),
+and add a real "Blog" entry point to both main navbars. Backend confirmed
+compiling cleanly (`npx tsc --noEmit`) before starting; a concurrent FAQ
+session's own files (`faq.controller.ts`, FAQ routes, `FAQ.model.ts`,
+etc.) were left untouched throughout, per explicit instruction.
+
+### Task 1 — real per-article images
+
+**Backend**: added a real, optional `image: String` field to
+`Article.model.ts` — a single value, not an array, since Article is
+one-photo-per-post (unlike `Product.productImages`). Added `image?:
+string` to `Article`/`ArticleInput`/`ArticleUpdateInput`
+(`libs/types/article.ts`). Wired it through
+`article.controller.ts`'s `createNewArticle` *and* `updateChosenArticle`
+(`req.file.path.replace(/\\/g, "/")`, identical to `createNewProduct`'s
+pattern) — update needed the wiring too, since the 5 real articles this
+task targets already existed from the prior session; there's no "create"
+path left to drive for them. `router-admin.ts` gained
+`makeUploader("articles").single("articleImage")` on both
+`POST /admin/article/create` and `POST /admin/article/:id`. Confirmed the
+JSON-body AJAX status-toggle path (`articles.js`) is unaffected — multer
+only intercepts genuinely multipart requests, verified live with a plain
+JSON status update after the change. `articles.ejs`'s create form gained
+a single file-upload input (`articleImage`, same `upload-img-box`/
+`previewFileHandler` pattern as `products.ejs`, added as
+`previewArticleImageHandler` in `articles.js`) and
+`enctype="multipart/form-data"`. Created the missing `uploads/articles/`
+directory (same pre-existing gap as `uploads/members`/`uploads/products`
+not existing on a fresh checkout, documented in `NEXT_STEPS.md`).
+
+**5 real photos**, one per article topic, sourced via the established
+Unsplash Search API pipeline (`UNSPLASH_ACCESS_KEY` from
+`venturo-react/.env.local`, `regular` size, required
+`download_location` tracking call per photo), checked against every
+photographer already credited elsewhere on the site to avoid repeats:
+
+| Article | Photo | Photographer |
+|---|---|---|
+| Sleeping bag temperature ratings | ["blue sleeping bag on mountain during daytime"](https://unsplash.com/photos/blue-sleeping-bag-on-mountain-during-daytime-hcti0k5E2Iw) | allaperto |
+| Wonderland Trail trip report | ["man in red jacket sitting on rock mountain during daytime"](https://unsplash.com/photos/man-in-red-jacket-sitting-on-rock-mountain-during-daytime-4ebHUn3S8Uo) | visualsofdana |
+| Free footwear returns (news) | ["pair of brown leather boots"](https://unsplash.com/photos/pair-of-brown-leather-boots-BSL837tTPAw) | claybanks |
+| Waterproofing hiking boots | ["brown-and-black leather hiking shoes"](https://unsplash.com/photos/brown-and-black-leather-hiking-shoes-wKMl3pkDsjk) | timberfoster |
+| Cold-weather layering | ["a hiker stands in snow with a backpack and poles"](https://unsplash.com/photos/a-hiker-stands-in-snow-with-a-backpack-and-poles-GqZTsTna_Gc) | jimmy__liu |
+
+License: Unsplash License (free for commercial use, no attribution
+legally required — https://unsplash.com/license); credited above as good
+practice. All 5 `download_location` tracking calls confirmed 200 before
+use.
+
+**Uploaded through the real admin endpoint, not a DB shortcut**: since
+these 5 articles already existed (created via the real form in the prior
+session), "through the real admin form" here meant the real
+authenticated multipart `POST /admin/article/:id` update endpoint (the
+one just wired above) rather than the create form — a real HTTP request
+per article, driven with the real `Admin` session cookie, each carrying
+one real image file. `qa-test-article` (the pre-existing, unrelated test
+article) was deliberately left with no image — confirmed via
+`GET /article/all` that its `image` field is genuinely absent, proving
+the field is honestly optional rather than defaulted.
+
+**Frontend**: `Article` type (`lib/types/article.ts`) gained `image?:
+string`. `BlogList.tsx`, `BlogSidebar.tsx` (Recent Posts thumbnails), and
+`BlogDetail.tsx` (hero image + Previous/Next thumbnails) all now render
+`${serverApi}/${article.image}` when present, falling back to the
+existing `/icons/noimage-list.svg` otherwise — the identical
+ternary already used for `Product.productImages[0]` everywhere else on
+the site, not a new pattern. `blog.css`'s four thumbnail rules
+(`.blog-card-thumb img`, `.blog-recent-thumb img`, `.blog-detail-hero
+img`, `.blog-prevnext-thumb img`) were sized/cropped for the old small
+centered fallback icon (`width/height: 20–45%`, `object-fit: contain`) —
+switched to `width/height: 100%`, `object-fit: cover`, matching the
+exact rule already used site-wide (`.bp-card-media img`, `.dd-card-media
+img`, `.hl-card-media img`, `.pd-main-image`) for both real photos and
+the fallback icon alike, not a new treatment.
+
+### Task 2 — Blog in the main nav
+
+Added a real `NavLink` to `/blog` in both `HomeNavbar.tsx` and
+`OtherNavbar.tsx`, positioned between Products and the
+auth-conditional Orders/My page block, using the identical
+`Box.hover-line` + `hm-sep` pipe-separator markup and
+`activeClassName="underline"` convention every other nav link already
+uses — no new styling. The existing Footer "Help" column Blog link
+(added in the Blog List/Detail session) was left as-is; this is a
+second, more discoverable entry point, not a replacement.
+
+### Verification
+
+`npx tsc --noEmit` clean on both repos throughout (frontend also
+confirmed via a full recompile, no new errors). Live Playwright checks
+(cached local install, real headless Chromium) at 1920/1440/390 against
+the real running dev server + backend:
+
+- **Images**: Blog List's 3 visible cards, the sidebar's 3 Recent Posts,
+  and the Blog Detail hero all resolve to real
+  `http://localhost:3005/uploads/articles/<uuid>.jpg` URLs (not the
+  fallback icon) at every width, confirmed both by `src` inspection and
+  by `naturalWidth`/`complete` on the actual `<img>` elements (all
+  `1080`/`true`) — genuinely loaded, not just correctly addressed.
+  Previous/Next on the sleeping-bag article's detail page correctly
+  showed one real image (the real chronological neighbor,
+  `wonderland-trail`) and one fallback icon (`qa-test-article`, the one
+  real article with no image) — confirms the fallback logic responds to
+  real per-article data, not hardcoded.
+- **Nav**: "Blog" renders with the correct active-underline state on
+  `/blog` itself, present and correctly `href="/blog"` on both
+  `HomeNavbar` (tested on `/`) and `OtherNavbar` (tested on `/products`)
+  at 1920/1440; correctly hidden below the existing 900px structural
+  breakpoint at 390px alongside every other text nav link (not a
+  regression — matches the pre-existing, intentional mobile nav
+  behavior).
+- Zero page errors, zero horizontal overflow at any width, on either the
+  homepage/products routes or `/blog`/`/blog/:slug`.

@@ -19,6 +19,10 @@ const articleSchema = new Schema(
       required: true,
     },
 
+    image: {
+      type: String,
+    },
+
     category: {
       type: String,
       enum: ArticleCategory,

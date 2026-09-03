@@ -70,12 +70,14 @@ routerAdmin.get(
 routerAdmin.post(
   "/article/create",
   restaurantController.verifyRestaurant,
+  makeUploader("articles").single("articleImage"),
   articleController.createNewArticle
 );
 
 routerAdmin.post(
   "/article/:id",
   restaurantController.verifyRestaurant,
+  makeUploader("articles").single("articleImage"),
   articleController.updateChosenArticle
 );
 
