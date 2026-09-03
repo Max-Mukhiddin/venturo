@@ -29,6 +29,11 @@ router.post(
   uploader("members").single("memberImage"),
   memberController.updateMember
 );
+router.post(
+  "/member/password",
+  memberController.verifyAuth,
+  memberController.changeMemberPassword
+);
 router.get("/member/top-users", memberController.getTopUsers);
 
 /** Product **/

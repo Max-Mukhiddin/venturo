@@ -3142,3 +3142,29 @@ and non-public product rejection, hidden-product omission, remove, repeated
 remove, and unauthenticated access denial. Temporary Wishlist rows used by the
 test were removed afterward. `npx tsc --noEmit` and `git diff --check` passed;
 `npm run build` was run before commit and generated artifacts were removed.
+
+## Session — My Account Backend Completion
+
+Kept the existing authenticated current-member route, `GET /member/detail`,
+and constrained its response to account-safe fields only: `_id`, nickname,
+phone, optional address/description/image, member type/status, and timestamps.
+It excludes `memberPassword` and the internal `memberPoints` counter.
+
+`POST /member/update` remains multipart-capable through the existing
+`uploader("members").single("memberImage")` convention. Member-facing updates
+now allowlist only nickname, phone, address, description, and image; `_id`,
+member type/status, points, and password cannot be changed by the request.
+Both read and profile write paths require an authenticated, currently `ACTIVE`
+member, not merely a previously-issued JWT.
+
+Added `POST /member/password` for an authenticated password change. It accepts
+`{ currentPassword, newPassword }`, verifies the current bcrypt hash, hashes
+the replacement with bcrypt, and returns only `{ passwordUpdated: true }`.
+
+Runtime verification used a temporary development member and restored all
+state: authenticated/unauthenticated detail access, response projection,
+allowed profile change, protected-field injection, multipart image upload,
+wrong-password rejection, successful password change, and old/new login
+behavior all passed. The temporary member and upload were removed afterward.
+`npx tsc --noEmit`, `npm run build`, and `git diff --check` passed; generated
+compiler files were removed.
