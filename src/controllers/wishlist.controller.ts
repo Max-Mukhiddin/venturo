@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import Errors, { HttpCode } from "../libs/Errors";
 import { T } from "../libs/types/common";
 import { ExtendedRequest } from "../libs/types/member";
+import { WishlistProductInput } from "../libs/types/wishlist";
 import WishlistService from "../models/Wishlist.service";
 
 const wishlistService = new WishlistService();
@@ -29,10 +30,10 @@ wishlistController.addWishlistItem = async (
 ) => {
   try {
     console.log("addWishlistItem");
-    const { productId } = req.body;
+    const { productId } = req.body as WishlistProductInput;
     const result = await wishlistService.addToWishlist(req.member, productId);
 
-    res.status(HttpCode.CREATED).json(result);
+    res.status(result.created ? HttpCode.CREATED : HttpCode.OK).json(result.wishlist);
   } catch (err) {
     console.log("Error, addWishlistItem:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
@@ -46,10 +47,10 @@ wishlistController.removeWishlistItem = async (
 ) => {
   try {
     console.log("removeWishlistItem");
-    const { productId } = req.body;
-    await wishlistService.removeFromWishlist(req.member, productId);
+    const { productId } = req.body as WishlistProductInput;
+    const removed = await wishlistService.removeFromWishlist(req.member, productId);
 
-    res.status(HttpCode.OK).json({ removed: true });
+    res.status(HttpCode.OK).json({ removed });
   } catch (err) {
     console.log("Error, removeWishlistItem:", err);
     if (err instanceof Errors) res.status(err.code).json(err);

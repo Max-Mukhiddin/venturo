@@ -3114,3 +3114,31 @@ the real running dev server + backend:
   behavior).
 - Zero page errors, zero horizontal overflow at any width, on either the
   homepage/products routes or `/blog`/`/blog/:slug`.
+
+## Session — Wishlist Business Logic Completion
+
+Completed the authenticated Wishlist flow without changing its existing member
+routes: `GET /wishlist/all`, `POST /wishlist/add`, and `POST /wishlist/remove`.
+All three use `memberController.verifyAuth`, derive ownership exclusively from
+the authenticated member, and never accept a body `memberId`.
+
+`Wishlist` remains a `{ memberId, productId }` join collection with timestamps
+and a unique compound index on that pair. A first add returns `201`; a duplicate
+add is idempotent and returns the existing row with `200`. Removal is scoped to
+the current member and returns `{ removed: true }` only for a deleted row;
+repeating it safely returns `{ removed: false }`.
+
+Member-facing list aggregation now follows Shop's `ProductStatus.PROCESS`
+visibility rule. It omits missing, deleted, paused, or otherwise non-public
+product references without failing the whole list, while preserving the existing
+`productData` array shape. Each populated product is projected to real catalog
+fields: `_id`, name, price, images, collection, stock count, status, views, and
+cached rating/review aggregates. Add rejects invalid, missing, and non-public
+product IDs.
+
+Runtime verification against the development database covered authenticated add,
+duplicate add, list product projection, cross-member remove protection, missing
+and non-public product rejection, hidden-product omission, remove, repeated
+remove, and unauthenticated access denial. Temporary Wishlist rows used by the
+test were removed afterward. `npx tsc --noEmit` and `git diff --check` passed;
+`npm run build` was run before commit and generated artifacts were removed.

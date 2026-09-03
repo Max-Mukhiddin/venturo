@@ -15,3 +15,12 @@ export interface WishlistInput {
   memberId: ObjectId;
   productId: ObjectId;
 }
+
+export interface WishlistProductInput {
+  productId: string;
+}
+
+export interface WishlistAddResult {
+  wishlist: Wishlist;
+  created: boolean;
+}
