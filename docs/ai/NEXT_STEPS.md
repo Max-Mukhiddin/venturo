@@ -41,7 +41,7 @@ Found during the live endpoint validation pass (server run against the dev datab
 
 ## Documentation
 
-1. **Article and ContactMessage admin management is JSON-only** as of the product-entity implementation pass — `GET/POST /admin/article/*` and `GET/POST /admin/contact/*` exist and work, but there are no EJS templates for them (unlike `products.ejs`/`users.ejs`). A non-technical store owner cannot actually use these features through the admin panel yet; new EJS views (list + create/edit forms, matching the existing `products.ejs` pattern) are still required before this is usable end-to-end.
+1. ~~**Article and ContactMessage admin management is JSON-only**~~ — **Article resolved** (see `docs/ai/COMPLETED_TASKS.md`'s "Make the Article feature genuinely usable end-to-end" session): `src/views/articles.ejs` now exists, following the exact `products.ejs` pattern, and a site admin can create/publish real articles through it. **ContactMessage admin management is still JSON-only** — `GET/POST /admin/contact/*` exist and work, but there is no EJS view for them yet; still required before a non-technical store owner can use that feature end-to-end.
 2. Resolve the flagged **`CLAUDE.md`/`AGENTS.md` duplication** (both exist at the repo root with identical content as of commit `9786040`) — either designate one as canonical and delete the other, or explicitly document why both are intentionally kept in sync, so future edits don't silently drift.
 3. As each ER-model open question is resolved, update `VENTURO_ER_MODEL.md`'s "Open Questions" section to reflect the decision (move it from "open" to a dated resolution note) rather than leaving answered questions listed as open.
 4. `BACKEND_MIGRATION.md`'s MongoDB Schema Changes table and `VENTURO_ER_MODEL.md`'s ER diagram now need updating to reflect the `Wishlist`/`Article`/`ContactMessage`/`Review` entities and the `Order.shippingAddress`/`OrderStatus` changes implemented in this pass — both currently still document the pre-storefront state only.
@@ -713,3 +713,24 @@ type (`page`, `limit`, `category`) and mirror `ProductService.getProducts`'s
 `$match`/`$skip`/`$limit` aggregate pattern in
 `ArticleService.getArticles`, before the frontend Blog List session
 starts — not a frontend workaround.
+
+## `faq.controller.ts` is a temporary stub, not a real implementation
+
+`src/controllers/faq.controller.ts` was added during the Article
+re-verification session solely to unblock a broken build: a concurrent,
+unrelated session had already wired `GET /faq/all` and
+`GET/POST /admin/faq/*` into `router.ts`/`router-admin.ts` (plus a
+`package.json` `seed:faqs` script) referencing this controller module,
+but the module itself, along with any FAQ schema/service/type/enum,
+didn't exist yet — `npx tsc --noEmit` failed and the dev server
+couldn't start at all, blocking every session working in this repo, not
+just this task.
+
+The stub's five methods (`getFAQs`/`getAllFAQs`/`createFAQ`/
+`updateFAQ`/`deleteFAQ`) all just return `501 Not Implemented` — no FAQ
+schema, service, Mongoose model, type, or enum exists anywhere in the
+codebase as of this entry. Whoever is building the real FAQ feature
+should replace this file entirely (it's marked as a temporary stub in
+its own header comment) rather than extend it in place — it was not
+designed as a real starting point, only as the minimum needed to
+compile.
