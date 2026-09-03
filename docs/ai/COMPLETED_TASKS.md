@@ -2607,3 +2607,227 @@ present) at every width, screenshots visually confirmed the mobile
 stacked layout (image on top, thumbnail row below) matches the reused
 `pd-*` breakpoint behavior. Zero browser console/page errors on either
 page.
+
+### Session 6 — Shop Detail lifestyle banner
+
+Built the bottom Shop Detail lifestyle/banner section in
+`venturo-react/src/app/screens/productsPage/ChosenProduct.tsx` and
+`venturo-react/src/css/products.css`. The reference is the real HikMali
+Shop Detail frame `2461:881` (1920 x 3584), Banner node `7:247`; its
+background placeholder is node `2462:1551` (`AdobeStock_590451543`).
+At the 1920px anchor, the new media area is 1620 x 481px inside the
+shared 150px gutter, with the heading at the verified 428px inset from
+the image left edge (578px from page left), 162px from the image top.
+It retains only the Figma's generic, truthful `Best Enjoyed Outside`
+copy and white `Shop Now` CTA. The CTA is a real React Router link to
+`/products`; no product, discount, seller, review, stock, or other
+template-only data was added. Client Reviews remains Session 7 scope.
+
+The source Figma placeholder carries no usable photographic asset.
+`public/img/shop-detail-banner.jpg` was present as an untracked
+2400 x 1600 JPEG with no embedded metadata or local provenance record,
+so it was not trusted or committed as-is. It was replaced at the same
+path with the Unsplash Search API `regular` download (1080 x 720) for
+[Alex Moliski, "Hiker walks through dry grass towards mountains"]
+(https://unsplash.com/photos/hiker-walks-through-dry-grass-towards-mountains-J9FkFuJFUgM),
+photo ID `J9FkFuJFUgM`, selected after previewing multiple real hiking
+candidates for its muted golden documentary treatment, right-aligned
+hiker, and open left-side copy zone. The required
+`links.download_location` request returned HTTP 200 before download.
+License: Unsplash License; attribution is recorded here as good practice.
+
+No dedicated Shop Detail mobile frame exists in the source Figma;
+mobile behavior was adapted using HikMali mobile homepage Banner node
+`7:147` as responsive precedent and Venturo's established responsive
+system. The banner uses the existing fluid gutter/content tokens and one
+structural breakpoint at 900px: desktop retains the Figma aspect ratio;
+mobile becomes a 507px-tall, near-full-width photographic composition
+at 390px, with 44px heading type, 24px image inset for copy, and a
+66%-positioned crop that retains the hiker to the right.
+
+Contrast was measured from the actual final JPEG by CSS `cover` crop
+and pixel sampling, compositing the final limited left-side scrim
+(`rgb(20,21,17)` gradient) before applying WCAG relative luminance.
+Heading-area minimum contrast: 9.83:1 at 1920, 7.83:1 at 1536, 6.95:1
+at 1440, and 5.93:1 at 390; all clear the 4.5:1 AA threshold. The CTA
+uses a white fill; `#707262` text measures 4.92:1 against it. Responsive
+geometry was also checked mathematically at 1920 (1620 x 481 media),
+1536 (1301.25 x 384.80), 1440 (1221.57 x 360.75), and 390 (350 x 507).
+The section has no viewport-height rule, so the approximately 719px
+tall viewport affects only normal page scroll, not banner crop/height.
+A controllable browser surface was unavailable in this execution
+environment, so no live DOM/screenshot inspection could be performed;
+the static crop/geometry measurements are recorded explicitly rather
+than represented as browser results.
+
+Verification: `npx tsc --noEmit` passed and `npm run build` passed.
+The build retains only the repository's pre-existing ESLint warnings;
+this session introduced none. Files changed:
+`ChosenProduct.tsx`, `products.css`, and
+`public/img/shop-detail-banner.jpg`.
+
+### Shop List — HikMali node 2458:2
+
+Rebuilt `/products` in `venturo-react/src/app/screens/productsPage/Products.tsx`
+and `venturo-react/src/css/products.css` against the HikMali Shop List desktop
+frame `2458:2`: existing global header, Breadcrumb `Home | Shop` / `Shop`,
+toolbar, grid, honest pagination, the existing `FreeShipping` strip, and the
+global footer. The default query no longer forces `CLIMBING`; it requests all
+real PROCESS products, while valid `productCollection` deep links still apply.
+
+Cards map only real backend `productCollection`, `productName`, primary
+`productImages[0]`, `productPrice`, and `productLeftCount` behavior. Figma-only
+discounts, model names, colour variants, delivery claims, stock messages, and
+ratings/review counts were deliberately omitted. Real name search, collection
+filtering, and the supported createdAt/price/views/averageRating sort mappings
+remain functional. Pagination uses only previous/current/next because the API
+does not return a total count; it preserves the current filter/search/sort
+state. Cart additions reuse the existing basket flow; unavailable products are
+disabled from `productLeftCount` without exposing a numeric stock level.
+
+Live browser checks found no horizontal overflow at 1920, 1536, 1440, 900, or
+390px. At 1920, the content area measured 1620px with four 390 x 554px cards
+and 20px gaps; layouts reduced to three desktop columns at 1536/1440 and one
+column at 900/390. Live checks confirmed the unfiltered all-products response,
+HIKING deep link, real name search, sorting, product-detail navigation, and
+Add To Cart. The present catalogue has seven products, so Next pagination and
+an out-of-stock card were not available for live activation; both paths were
+verified from their state-preserving and `productLeftCount <= 0` implementation.
+`npx tsc --noEmit` and `npm run build` passed; build warnings are pre-existing.
+
+### Shop List — shared card finalization
+
+Finalized the approved shared `BestProductCard` extraction: Homepage Best
+Products and Shop List now render one component with the same 80px title area,
+320px media area, 45px CTA, dark description overlay, real primary product
+image, price reveal, and stock-safe Add To Cart state. The Shop List keeps its
+HikMali node `2458:2` page shell and four-column, 20px-gap desktop grid, but
+now inherits the natural approximately 445px Homepage card height rather than
+the prior stretched 554px variant. Live checks confirmed the matching geometry,
+product navigation, category deep link, submitted name search, and no desktop
+overflow; its current seven-product dataset leaves Next disabled. `npx tsc
+--noEmit` and `npm run build` passed with only existing warnings.
+
+### Contact page — HikMali node 2465:1643
+
+Implemented `/contact` from the desktop Contact Us frame `2465:1643` using the
+shared breadcrumb, FreeShipping strip, and footer. No Contact mobile frame
+exists. The real public `POST /contact/submit` endpoint and existing
+`ContactService` are used with required name, email, backend-required subject,
+message, agreement validation, disabled sending state, and success/error UI.
+The Figma mobile number, address, phone, email, hours, map, and demo image were
+not fabricated: subject replaces mobile number, generic truthful contact copy
+is shown, location is explicitly unavailable, and the existing Venturo badge
+replaces the licensed demo asset. Live checks at 1920, 1536, 1440, 900, and 390
+confirmed responsive stacking, fields, footer, and no horizontal overflow.
+`npx tsc --noEmit` and `npm run build` passed with existing warnings only.
+
+### FAQ page — HikMali node 2465:2353
+
+Implemented `/faq` from Figma FAQ frame `2465:2353`; no dedicated full mobile
+FAQ frame exists. The backend has no FAQ API, so `faq.ts` now contains the
+approved static Venturo-safe content in Shopping and Account/Order Support
+groups. Built two accessible single-open accordion groups, the Figma-width
+desktop help panel, shared Breadcrumb, benefits strip, and footer FAQ link.
+Verified 1920, 1536, 1440, 900, and 390px: desktop retains two columns,
+tablet/mobile stacks with no horizontal overflow. `npx tsc --noEmit`, `npm run
+build`, and `git diff --check` passed; only existing lint warnings remain.
+
+## Session — Make the Article feature genuinely usable end-to-end
+
+Goal: unblock the planned frontend Blog List/Blog Detail pages (real
+Figma frames already identified: node 2465:2715 and 2470:109) the same
+way creating 7 real products unblocked the homepage's product sections.
+Confirmed every Article endpoint's real current behavior by reading the
+actual controller/service/router code first, then verified live against
+the real dev database — not assumed from the original design intent.
+
+### Real current state, confirmed
+
+- `GET /article/all` (public): returns every `PUBLISHED` article,
+  sorted `createdAt` desc. **No pagination and no category filtering
+  at all** — confirmed live, not just from reading
+  `ArticleService.getArticles()`: with 6 real published articles in the
+  database, `?page=1&limit=2` still returned all 6, and
+  `?category=NEWS` still returned all 6 across every category
+  unfiltered. This is a bigger gap than `GET /product/all`'s
+  already-documented "no total-count field" limitation — `GET
+  /product/all` at least has real `$skip`/`$limit`/category-match
+  aggregation; `GET /article/all` has none of that machinery at all,
+  no `ArticleInquiry` type even exists. Flagged in `NEXT_STEPS.md`
+  rather than silently assuming the frontend Blog List can work around
+  it — it can't, yet.
+- `GET /article/:slug` (public): works correctly, `PUBLISHED`-only,
+  confirmed 404 on both a nonexistent slug and a real slug flipped
+  back to `DRAFT` (tested live: toggled a real published article to
+  `DRAFT` via the real admin endpoint, confirmed it both disappeared
+  from `GET /article/all`'s count and 404'd on its own slug URL, then
+  restored it to `PUBLISHED` and confirmed both reversed).
+- Admin `GET/POST /article/*` (`verifyRestaurant`-guarded, matching
+  the product admin routes' auth exactly): all three (list, create,
+  update) were real and functional, but `getAllArticlesAdmin` was
+  JSON-only with **no EJS view at all** — genuinely no way for the
+  site admin to write or manage articles without hitting the raw API
+  directly, exactly as described.
+
+### Built: minimal EJS admin view, same pattern as products.ejs
+
+- `articleController.getAllArticlesAdmin` now renders a new
+  `src/views/articles.ejs` (list table + create form) instead of
+  returning JSON — same `res.render(view, { data })` pattern as
+  `productController.getAllProducts`, same `/css/products.css` reused
+  as-is (its classes are all generic/structural, not product-specific).
+- `articleController.createNewArticle`'s response changed from JSON to
+  the same inline-script alert+redirect pattern as
+  `createNewProduct` (`res.send('<script>...window.location.replace...
+  </script>')`) — required for a plain, non-AJAX `<form method="POST">`
+  submit to work the same way the product create form does.
+- `articleController.updateChosenArticle`'s response wrapped in `{
+  data: result }` to match `updateChosenProduct`'s exact shape — the
+  new `public/js/articles.js` AJAX status-change handler checks
+  `result.data`, identical to `products.js`'s existing check.
+- `public/js/articles.js`: mirrors `products.js`'s `#process-btn`/
+  `#cancel-btn` form-toggle and AJAX status-update handler exactly,
+  plus one small addition — an `autoSlugHandler()` that fills the slug
+  field from the title as the admin types (stops once the admin
+  manually edits the slug field, tracked via a `data("touched")` flag)
+  since `Article.slug` is a real unique-indexed field with no
+  auto-generation anywhere before this.
+- Added a real "Articles" nav link (`/admin/article/all`) to
+  `home.ejs`, `products.ejs`, and `users.ejs`'s existing nav bars —
+  the view otherwise would have been unreachable without knowing the
+  URL by heart, undermining "genuinely usable end-to-end".
+
+### 5 real articles created through the admin view — not a DB insert
+
+Real, honest outdoor-gear content, no Lorem Ipsum, one per topic — all
+created by literally driving the real HTML form (Playwright filling
+and submitting the actual page, same as a human admin would), then
+published through the real per-row status dropdown (same
+`PAUSE→PROCESS`-style publish workflow already established for
+products, `DRAFT→PUBLISHED` here):
+
+| Title | Category | Slug |
+|---|---|---|
+| How to Choose the Right Sleeping Bag Temperature Rating | GEAR_GUIDES | `sleeping-bag-temperature-rating-guide` |
+| Trip Report: Three Days on the Wonderland Trail | TRIP_REPORTS | `wonderland-trail-three-day-trip-report` |
+| Venturo Adds Free Returns on All Footwear | NEWS | `free-returns-on-all-footwear` |
+| Five Ways to Waterproof Your Hiking Boots | TIPS | `waterproof-hiking-boots-five-ways` |
+| Layering for Cold-Weather Backpacking: A Practical Guide | GEAR_GUIDES | `cold-weather-backpacking-layering-guide` |
+
+All 4 real `ArticleCategory` values now have at least one real article
+(2x `GEAR_GUIDES`, 1x each of `TRIP_REPORTS`/`NEWS`/`TIPS`), plus the
+pre-existing `qa-test-article` (`GEAR_GUIDES`) — 6 real published
+articles total, confirmed live via `GET /article/all`.
+
+### Verification
+
+`npx tsc --noEmit` clean. Live requests against the real dev database
+throughout (not just code-reading): admin login → real list page render
+→ real form submission → real per-row publish toggle → public endpoint
+confirms all 6, each real slug fetch confirms the right content/
+category/status. Screenshots of the real rendered admin list (before
+and after creating the 5 articles) and the open create form captured.
+Backend dev server restarted under `nodemon` (was running as a bare
+`ts-node` process with no auto-reload) so the controller changes were
+actually live for this verification, not stale.

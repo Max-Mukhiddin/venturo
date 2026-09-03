@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Errors, { HttpCode } from "../libs/Errors";
+import Errors, { HttpCode, Message } from "../libs/Errors";
 import { T } from "../libs/types/common";
 import { ArticleInput, ArticleUpdateInput } from "../libs/types/article";
 import ArticleService from "../models/Article.service";
@@ -36,7 +36,12 @@ articleController.getArticle = async (req: Request, res: Response) => {
   }
 };
 
-/** Admin (JSON-only this pass) */
+/** Admin — SSR list/create view, same pattern as product.controller.ts's
+ *  getAllProducts/createNewProduct/updateChosenProduct (plain form POST +
+ *  inline-script redirect for create, JSON `{ data }` for the AJAX status
+ *  update). Was JSON-only with no EJS view; both endpoints' response
+ *  shapes changed here to match that convention exactly, not just the
+ *  admin listing itself. */
 
 articleController.getAllArticlesAdmin = async (
   req: Request,
@@ -44,9 +49,9 @@ articleController.getAllArticlesAdmin = async (
 ) => {
   try {
     console.log("getAllArticlesAdmin");
-    const result = await articleService.getAllArticles();
+    const data = await articleService.getAllArticles();
 
-    res.status(HttpCode.OK).json(result);
+    res.render("articles", { articles: data });
   } catch (err) {
     console.log("Error, getAllArticlesAdmin:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
@@ -58,13 +63,18 @@ articleController.createNewArticle = async (req: Request, res: Response) => {
   try {
     console.log("createNewArticle");
     const input: ArticleInput = req.body;
-    const result = await articleService.createNewArticle(input);
+    await articleService.createNewArticle(input);
 
-    res.status(HttpCode.CREATED).json(result);
+    res.send(
+      `<script> alert("Successful creation!"); window.location.replace('/admin/article/all')</script>`
+    );
   } catch (err) {
     console.log("Error, createNewArticle:", err);
-    if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.standard.code).json(Errors.standard);
+    const message =
+      err instanceof Errors ? err.message : Message.SOMETHING_WENT_WRONG;
+    res.send(
+      `<script> alert("${message}"); window.location.replace('/admin/article/all')</script>`
+    );
   }
 };
 
@@ -78,7 +88,7 @@ articleController.updateChosenArticle = async (
     const input: ArticleUpdateInput = req.body;
     const result = await articleService.updateChosenArticle(id, input);
 
-    res.status(HttpCode.OK).json(result);
+    res.status(HttpCode.OK).json({ data: result });
   } catch (err) {
     console.log("Error, updateChosenArticle:", err);
     if (err instanceof Errors) res.status(err.code).json(err);

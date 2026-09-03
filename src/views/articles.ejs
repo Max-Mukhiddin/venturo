@@ -1,0 +1,139 @@
+<%- include('includes/header') %>
+
+<link rel="stylesheet" type="text/css" href="/css/products.css" />
+
+<body>
+  <div class="products-container">
+    <div class="navigation-menu">
+      <ul class="nav justify-content-center">
+        <li class="nav-item" style="cursor: pointer">
+          <a class="nav-link active" href="/admin/">Home</a>
+        </li>
+        <li class="nav-item" style="cursor: pointer">
+          <a class="nav-link" href="/admin/product/all">Menu</a>
+        </li>
+        <li class="nav-item" style="cursor: pointer">
+          <a class="nav-link" href="/admin/article/all">Articles</a>
+        </li>
+        <li class="nav-item" style="cursor: pointer">
+          <a class="nav-link" href="/admin/user/all">Users</a>
+        </li>
+        <li
+          class="nav-item"
+          style="cursor: pointer"
+          onclick="return confirm('Do you want to logout?')"
+        >
+          <a class="nav-link" href="/admin/logout">Logout</a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="restaurant-menu-frame">
+      <div class="board">
+        <div class="dishes-table">
+          <span class="new-dish-txt" style="margin-bottom: 30px">
+            ARTICLES
+          </span>
+          <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+              <tr class="thead-light">
+                <th scope="col">T/r</th>
+                <th scope="col">Title</th>
+                <th scope="col">Slug</th>
+                <th scope="col">Category</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+
+              <% articles.map(function(value, key){ %>
+            <tbody style="background: white">
+              <td><%= key + 1 %></td>
+              <td><%= value.title %></td>
+              <td><%= value.slug %></td>
+              <td><%= value.category %></td>
+              <td>
+                <select class="spec-select new-article-status" id="<%= value._id %>">
+                  <option value="DRAFT" <%= value.status === 'DRAFT' ? 'selected': '' %> >DRAFT</option>
+                  <option value="PUBLISHED" <%= value.status === 'PUBLISHED' ? 'selected': '' %> >PUBLISHED</option>
+                </select>
+              </td>
+            </tbody>
+              <% }) %>
+
+          </table>
+          <div
+            class="long-input"
+            style="align-items: flex-end; margin-bottom: 25px"
+          >
+            <button class="btn btn-primary" id="process-btn">
+              New Article
+            </button>
+          </div>
+        </div>
+        <form
+          onsubmit="return validateArticleForm()"
+          action="/admin/article/create"
+          method="POST"
+          class="dish-container"
+        >
+          <div class="long-input" style="display: flex; align-items: center">
+            <span class="new-dish-txt">NEW ARTICLE DETAIL</span>
+          </div>
+          <div class="login-input-frame">
+            <div class="long-input">
+              <label>Title</label>
+              <input
+                type="text"
+                placeholder="Title"
+                name="title"
+                class="article-title"
+                oninput="autoSlugHandler()"
+              />
+            </div>
+            <input
+              name="status"
+              value="DRAFT"
+              class="article-status"
+              hidden
+            />
+          </div>
+          <div class="long-input">
+            <label>Slug (URL-friendly, unique)</label>
+            <input
+              type="text"
+              placeholder="slug-goes-here"
+              name="slug"
+              class="article-slug"
+            />
+          </div>
+          <div class="half-input-frame">
+            <div class="half-input">
+              <label>Category</label>
+              <select class="article-category" name="category">
+                <option value="GEAR_GUIDES" selected>Gear Guides</option>
+                <option value="TRIP_REPORTS">Trip Reports</option>
+                <option value="NEWS">News</option>
+                <option value="TIPS">Tips</option>
+              </select>
+            </div>
+          </div>
+          <div class="long-input">
+            <label>Content</label>
+            <textarea name="content" class="article-content" rows="10"></textarea>
+          </div>
+
+          <div class="operation-buttons">
+            <button class="btn btn-danger" id="cancel-btn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="create-btn">
+              Create
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="/js/articles.js"></script>
+</body>
+
+<%- include('includes/footer') %>

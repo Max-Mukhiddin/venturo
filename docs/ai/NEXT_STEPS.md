@@ -691,3 +691,25 @@ was the only real consumer of the `swiper`/`swiper/react` package
 its imports were removed); the dependency itself is still listed in
 `package.json` — worth removing next time `package.json` is touched,
 not done here since neither session asked for a dependency cleanup.
+
+## `GET /article/all` has no pagination or category filtering at all
+
+Confirmed live (see `docs/ai/COMPLETED_TASKS.md`'s Article session),
+not just from reading `ArticleService.getArticles()`: with 6 real
+published articles in the database, `?page=1&limit=2` still returned
+all 6, and `?category=NEWS` still returned all 6 unfiltered across
+every category. This is a bigger gap than `GET /product/all`'s already-
+documented "no total-count field" limitation (that endpoint at least
+has real `$skip`/`$limit`/category-match aggregation) — `GET
+/article/all` has none of that machinery, and no `ArticleInquiry` type
+exists at all (unlike `ProductInquiry`).
+
+This directly blocks a real Blog List page (Figma node 2465:2715) from
+working correctly at any real content volume: today it would have to
+fetch every published article on every page load and filter/paginate
+client-side, which doesn't scale and doesn't match how every other
+listing page in this app works. Likely fix: add a real `ArticleInquiry`
+type (`page`, `limit`, `category`) and mirror `ProductService.getProducts`'s
+`$match`/`$skip`/`$limit` aggregate pattern in
+`ArticleService.getArticles`, before the frontend Blog List session
+starts — not a frontend workaround.

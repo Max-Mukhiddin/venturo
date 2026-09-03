@@ -58,7 +58,7 @@ routerAdmin.post(
   restaurantController.updateChosenUser
 );
 
-/** Article (JSON-only this pass — no EJS views yet) */
+/** Article (SSR list/create view, JSON status-update AJAX — see article.controller.ts) */
 
 routerAdmin.get(
   "/article/all",
