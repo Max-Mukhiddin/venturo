@@ -3,9 +3,6 @@ import {
   LoginInput,
   Member,
   MemberInput,
-  MemberPasswordUpdateInput,
-  MemberProfile,
-  MemberProfileUpdateInput,
   MemberUpdateInput,
 } from "../libs/types/member";
 import Errors, { HttpCode, Message } from "../libs/Errors";
@@ -72,95 +69,25 @@ class MemberService {
     return await this.memberModel.findById(member._id).lean().exec();
   }
 
-  public async getMemberDetail(member: Member): Promise<MemberProfile> {
+  public async getMemberDetail(member: Member): Promise<Member> {
     const memberId = shapeIntoMongooseIdObjectId(member._id);
     const result = await this.memberModel
       .findOne({ _id: memberId, memberStatus: MemberStatus.ACTIVE })
-      .select(
-        "_id memberNick memberPhone memberAddress memberDesc memberImage memberType memberStatus createdAt updatedAt"
-      )
-      .lean()
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result as MemberProfile;
+    return result;
   }
 
   public async updateMember(
     member: Member,
-    input: MemberProfileUpdateInput
-  ): Promise<MemberProfile> {
+    input: MemberUpdateInput
+  ): Promise<Member> {
     const memberId = shapeIntoMongooseIdObjectId(member._id);
-    const profileUpdate: MemberProfileUpdateInput = {};
-    const editableFields: (keyof MemberProfileUpdateInput)[] = [
-      "memberNick",
-      "memberPhone",
-      "memberAddress",
-      "memberDesc",
-      "memberImage",
-    ];
-
-    for (const field of editableFields) {
-      if (input[field] !== undefined) profileUpdate[field] = input[field];
-    }
-
-    try {
-      const result = await this.memberModel
-        .findOneAndUpdate(
-          { _id: memberId, memberStatus: MemberStatus.ACTIVE },
-          profileUpdate,
-          { new: true, runValidators: true }
-        )
-        .select(
-          "_id memberNick memberPhone memberAddress memberDesc memberImage memberType memberStatus createdAt updatedAt"
-        )
-        .lean()
-        .exec();
-      if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
-      return result as MemberProfile;
-    } catch (err) {
-      if (err instanceof Errors) throw err;
-      console.log("Error, model:updateMember:", err);
-      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
-    }
-  }
-
-  public async changeMemberPassword(
-    member: Member,
-    input: MemberPasswordUpdateInput
-  ): Promise<void> {
-    if (
-      typeof input.currentPassword !== "string" ||
-      !input.currentPassword ||
-      typeof input.newPassword !== "string" ||
-      !input.newPassword
-    ) {
-      throw new Errors(HttpCode.BAD_REQUEST, Message.UPDATE_FAILED);
-    }
-
-    const memberId = shapeIntoMongooseIdObjectId(member._id);
-    const currentMember = await this.memberModel
-      .findOne(
-        { _id: memberId, memberStatus: MemberStatus.ACTIVE },
-        { memberPassword: 1 }
-      )
-      .exec();
-    if (!currentMember) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-
-    const isMatch = await bcrypt.compare(
-      input.currentPassword,
-      currentMember.memberPassword
-    );
-    if (!isMatch) throw new Errors(HttpCode.UNAUTHORIZED, Message.WRONG_PASSWORD);
-
-    const memberPassword = await bcrypt.hash(input.newPassword, await bcrypt.genSalt());
     const result = await this.memberModel
-      .findOneAndUpdate(
-        { _id: memberId, memberStatus: MemberStatus.ACTIVE },
-        { memberPassword },
-        { new: true }
-      )
+      .findOneAndUpdate({ _id: memberId }, input, { new: true })
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_MODIFIED, Message.UPDATE_FAILED);
+    return result;
   }
 
   public async getTopUsers(): Promise<Member[]> {

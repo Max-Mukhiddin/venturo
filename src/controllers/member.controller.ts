@@ -7,8 +7,7 @@ import {
   LoginInput,
   Member,
   MemberInput,
-  MemberPasswordUpdateInput,
-  MemberProfileUpdateInput,
+  MemberUpdateInput,
 } from "../libs/types/member";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import AuthService from "../models/Auth.service";
@@ -105,30 +104,13 @@ memberController.getMemberDetail = async (
 memberController.updateMember = async (req: ExtendedRequest, res: Response) => {
   try {
     console.log("updateMember");
-    const input: MemberProfileUpdateInput = req.body;
+    const input: MemberUpdateInput = req.body;
     if (req.file) input.memberImage = req.file.path.replace(/\\/, "/");
     const result = await memberService.updateMember(req.member, input);
 
     res.status(HttpCode.OK).json(result);
   } catch (err) {
     console.log("Error, updateMember:", err);
-    if (err instanceof Errors) res.status(err.code).json(err);
-    else res.status(Errors.standard.code).json(Errors.standard);
-  }
-};
-
-memberController.changeMemberPassword = async (
-  req: ExtendedRequest,
-  res: Response
-) => {
-  try {
-    console.log("changeMemberPassword");
-    const input: MemberPasswordUpdateInput = req.body;
-    await memberService.changeMemberPassword(req.member, input);
-
-    res.status(HttpCode.OK).json({ passwordUpdated: true });
-  } catch (err) {
-    console.log("Error, changeMemberPassword:", err);
     if (err instanceof Errors) res.status(err.code).json(err);
     else res.status(Errors.standard.code).json(Errors.standard);
   }

@@ -46,32 +46,6 @@ export interface MemberUpdateInput {
   memberImage?: string;
 }
 
-export interface MemberProfile {
-  _id: ObjectId;
-  memberNick: string;
-  memberPhone: string;
-  memberAddress?: string;
-  memberDesc?: string;
-  memberImage?: string;
-  memberType: MemberType;
-  memberStatus: MemberStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface MemberProfileUpdateInput {
-  memberNick?: string;
-  memberPhone?: string;
-  memberAddress?: string;
-  memberDesc?: string;
-  memberImage?: string;
-}
-
-export interface MemberPasswordUpdateInput {
-  currentPassword: string;
-  newPassword: string;
-}
-
 
 export interface ExtendedRequest extends Request {
   member: Member;
