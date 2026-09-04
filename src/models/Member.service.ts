@@ -6,6 +6,7 @@ import {
   MemberProfile,
   MemberProfileUpdateInput,
   MemberUpdateInput,
+  PublicSignupInput,
 } from "../libs/types/member";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import { MemberStatus, MemberType } from "../libs/enums/member.enum";
@@ -30,12 +31,22 @@ class MemberService {
     return result;
   }
 
-  public async signup(input: MemberInput): Promise<Member> {
+  public async signup(input: PublicSignupInput): Promise<Member> {
     const salt = await bcrypt.genSalt();
-    input.memberPassword = await bcrypt.hash(input.memberPassword, salt);
+    const member = {
+      memberNick: input.memberNick,
+      memberPhone: input.memberPhone,
+      memberPassword: await bcrypt.hash(input.memberPassword, salt),
+      memberAddress: input.memberAddress,
+      memberDesc: input.memberDesc,
+      memberImage: input.memberImage,
+      memberType: MemberType.USER,
+      memberStatus: MemberStatus.ACTIVE,
+      memberPoints: 0,
+    };
 
     try {
-      const result = await this.memberModel.create(input);
+      const result = await this.memberModel.create(member);
       result.memberPassword = "";
       return result.toJSON() as Member;
     } catch (err) {
@@ -69,6 +80,18 @@ class MemberService {
     }
 
     return await this.memberModel.findById(member._id).lean().exec();
+  }
+
+  public async getActiveMember(memberId: Member["_id"]): Promise<Member> {
+    const result = await this.memberModel
+      .findOne({
+        _id: shapeIntoMongooseIdObjectId(memberId),
+        memberStatus: MemberStatus.ACTIVE,
+      })
+      .lean()
+      .exec();
+    if (!result) throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
+    return result as Member;
   }
 
   public async getMemberDetail(member: Member): Promise<MemberProfile> {
@@ -176,7 +199,11 @@ class MemberService {
   public async processLogin(input: LoginInput): Promise<Member> {
     const member = await this.memberModel
       .findOne(
-        { memberNick: input.memberNick },
+        {
+          memberNick: input.memberNick,
+          memberType: MemberType.ADMIN,
+          memberStatus: MemberStatus.ACTIVE,
+        },
         { memberNick: 1, memberPassword: 1 }
       )
       .exec();

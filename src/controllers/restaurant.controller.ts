@@ -81,9 +81,27 @@ restaurantController.processLogin = async (
     const input: LoginInput = req.body;
     const result = await memberService.processLogin(input);
 
-    req.session.member = result;
-    req.session.save(function () {
-      res.redirect("/admin/product/all");
+    req.session.regenerate(function (regenerateError) {
+      if (regenerateError) {
+        console.log("Error, regenerate admin session:", regenerateError);
+        res.send(
+          `<script> alert("${Message.SOMETHING_WENT_WRONG}"); window.location.replace('/admin/login')</script>`
+        );
+        return;
+      }
+
+      req.session.member = result;
+      req.session.save(function (saveError) {
+        if (saveError) {
+          console.log("Error, save admin session:", saveError);
+          res.send(
+            `<script> alert("${Message.SOMETHING_WENT_WRONG}"); window.location.replace('/admin/login')</script>`
+          );
+          return;
+        }
+
+        res.redirect("/admin/product/all");
+      });
     });
   } catch (err) {
     console.log("Error, processLogin:", err);

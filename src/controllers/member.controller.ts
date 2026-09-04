@@ -6,8 +6,8 @@ import {
   ExtendedRequest,
   LoginInput,
   Member,
-  MemberInput,
   MemberProfileUpdateInput,
+  PublicSignupInput,
 } from "../libs/types/member";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import AuthService from "../models/Auth.service";
@@ -15,6 +15,13 @@ import { AUTH_TIMER } from "../libs/config";
 
 const memberService = new MemberService();
 const authService = new AuthService();
+const isProduction = process.env.NODE_ENV === "production";
+const accessTokenCookieOptions = {
+  maxAge: AUTH_TIMER * 3600 * 1000,
+  httpOnly: true,
+  sameSite: "lax" as const,
+  secure: isProduction,
+};
 
 const memberController: T = {};
 
@@ -35,15 +42,27 @@ memberController.signup = async (req: Request, res: Response) => {
   try {
     console.log("signup");
 
-    const input: MemberInput = req.body,
-      result: Member = await memberService.signup(input);
+    const {
+      memberNick,
+      memberPhone,
+      memberPassword,
+      memberAddress,
+      memberDesc,
+      memberImage,
+    } = req.body;
+    const input: PublicSignupInput = {
+      memberNick,
+      memberPhone,
+      memberPassword,
+      memberAddress,
+      memberDesc,
+      memberImage,
+    };
+    const result: Member = await memberService.signup(input);
 
     const token = await authService.createToken(result);
 
-    res.cookie("accessToken", token, {
-      maxAge: AUTH_TIMER * 3600 * 1000,
-      httpOnly: false,
-    });
+    res.cookie("accessToken", token, accessTokenCookieOptions);
 
     res.status(HttpCode.CREATED).json({ member: result, accessToken: token });
   } catch (err) {
@@ -60,10 +79,7 @@ memberController.login = async (req: Request, res: Response) => {
       result = await memberService.login(input),
       token = await authService.createToken(result);
 
-    res.cookie("accessToken", token, {
-      maxAge: AUTH_TIMER * 3600 * 1000,
-      httpOnly: false,
-    });
+    res.cookie("accessToken", token, accessTokenCookieOptions);
 
     res.status(HttpCode.OK).json({ member: result, accessToken: token });
   } catch (err) {
@@ -76,7 +92,7 @@ memberController.login = async (req: Request, res: Response) => {
 memberController.logout = (req: ExtendedRequest, res: Response) => {
   try {
     console.log("logout");
-    res.cookie("accessToken", null, { maxAge: 0, httpOnly: true });
+    res.cookie("accessToken", null, { ...accessTokenCookieOptions, maxAge: 0 });
     res.status(HttpCode.OK).json({ logout: true });
   } catch (err) {
     console.log("Error, logout:", err);
@@ -137,7 +153,10 @@ memberController.verifyAuth = async (
 ) => {
   try {
     const token = req.cookies["accessToken"];
-    if (token) req.member = await authService.checkAuth(token);
+    if (token) {
+      const payload = await authService.checkAuth(token);
+      req.member = await memberService.getActiveMember(payload._id);
+    }
     if (!req.member)
       throw new Errors(HttpCode.UNAUTHORIZED, Message.NOT_AUTHENTICATED);
 
@@ -156,7 +175,10 @@ memberController.retrieveAuth = async (
 ) => {
   try {
     const token = req.cookies["accessToken"];
-    if (token) req.member = await authService.checkAuth(token);
+    if (token) {
+      const payload = await authService.checkAuth(token);
+      req.member = await memberService.getActiveMember(payload._id);
+    }
 
     next();
   } catch (err) {
