@@ -92,6 +92,13 @@ body {
   letter-spacing: 0;
 }
 
+.admin-brand__mark {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+}
+
 .admin-nav__links {
   display: flex;
   align-items: center;
