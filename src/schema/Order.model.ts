@@ -1,5 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import { OrderStatus } from "../libs/enums/order.enum";
+import { OrderStatus, PaymentMethod } from "../libs/enums/order.enum";
 
 const orderSchema = new Schema(
   {
@@ -15,6 +15,12 @@ const orderSchema = new Schema(
       type: String,
       enum: OrderStatus,
       default: OrderStatus.PENDING,
+    },
+    orderPaymentMethod: {
+      type: String,
+      enum: Object.values(PaymentMethod),
+      required: true,
+      default: PaymentMethod.PAY_ON_DELIVERY,
     },
     memberId: {
       type: Schema.Types.ObjectId,

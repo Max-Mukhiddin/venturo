@@ -1,5 +1,5 @@
 import { shapeIntoMongooseIdObjectId } from "../libs/config";
-import { OrderStatus } from "../libs/enums/order.enum";
+import { OrderStatus, PaymentMethod } from "../libs/enums/order.enum";
 import Errors, { HttpCode, Message } from "../libs/Errors";
 import { Member } from "../libs/types/member";
 import { T } from "../libs/types/common";
@@ -32,6 +32,11 @@ class OrderService {
   ): Promise<Order> {
     const memberId = shapeIntoMongooseIdObjectId(member._id);
     const { shippingAddress, items } = input;
+    const orderPaymentMethod =
+      input.orderPaymentMethod ?? PaymentMethod.PAY_ON_DELIVERY;
+    if (!Object.values(PaymentMethod).includes(orderPaymentMethod)) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
+    }
     const amount = items.reduce((accumulator: number, item: OrderItemInput) => {
       return accumulator + item.itemPrice * item.itemQuantity;
     }, 0);
@@ -42,6 +47,7 @@ class OrderService {
         orderDelivery: delivery,
         memberId: memberId,
         shippingAddress: shippingAddress,
+        orderPaymentMethod,
       });
 
       console.log("orderId", newOrder._id);
