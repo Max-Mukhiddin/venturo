@@ -7,7 +7,7 @@
     <a class="<%= activePage === 'home' ? 'is-active' : '' %>" href="/admin">Overview</a>
     <% if (member) { %>
     <a class="<%= activePage === 'products' ? 'is-active' : '' %>" href="/admin/product/all">Products</a>
-    <a href="/admin/article/all">Articles</a>
+    <a class="<%= activePage === 'articles' ? 'is-active' : '' %>" href="/admin/article/all">Articles</a>
     <a class="<%= activePage === 'members' ? 'is-active' : '' %>" href="/admin/user/all">Members</a>
     <a class="admin-nav__logout" href="/admin/logout" onclick="return confirm('Do you want to logout?')">Logout</a>
     <% } else { %>

@@ -3,32 +3,10 @@
 <link rel="stylesheet" type="text/css" href="/css/products.css" />
 
 <body>
-  <div class="products-container">
-    <div class="navigation-menu">
-      <ul class="nav justify-content-center">
-        <li class="nav-item" style="cursor: pointer">
-          <a class="nav-link active" href="/admin/">Home</a>
-        </li>
-        <li class="nav-item" style="cursor: pointer">
-          <a class="nav-link" href="/admin/product/all">Menu</a>
-        </li>
-        <li class="nav-item" style="cursor: pointer">
-          <a class="nav-link" href="/admin/article/all">Articles</a>
-        </li>
-        <li class="nav-item" style="cursor: pointer">
-          <a class="nav-link" href="/admin/user/all">Users</a>
-        </li>
-        <li
-          class="nav-item"
-          style="cursor: pointer"
-          onclick="return confirm('Do you want to logout?')"
-        >
-          <a class="nav-link" href="/admin/logout">Logout</a>
-        </li>
-      </ul>
-    </div>
+  <div class="articles-container">
+    <%- include('includes/admin-nav', { activePage: 'articles' }) %>
 
-    <div class="restaurant-menu-frame">
+    <div class="catalog-frame">
       <div class="board">
         <div class="dishes-table">
           <span class="new-dish-txt" style="margin-bottom: 30px">
@@ -37,7 +15,7 @@
           <table class="table table-bordered table-hover">
             <thead class="thead-light">
               <tr class="thead-light">
-                <th scope="col">T/r</th>
+                <th scope="col">#</th>
                 <th scope="col">Title</th>
                 <th scope="col">Slug</th>
                 <th scope="col">Category</th>
