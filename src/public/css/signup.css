@@ -1,191 +1,164 @@
 .signup-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
+  width: min(100%, 700px);
+}
+
+.signup-frame {
+  padding: 38px;
+  border: 1px solid var(--venturo-line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(23, 62, 50, 0.1);
+}
+
+.signup-top span {
+  display: block;
+  color: var(--venturo-evergreen);
+  font-size: 28px;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+}
+
+.signup-top div,
+.signup-top p,
+.thumbnail-desc {
+  color: #697166;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.sign-input-frame {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-  animation: gradient 15s ease infinite;
-  -webkit-animation: gradient 15s ease infinite;
-  background-size: 200% 200%;
-}
-
-.signup-container a {
-  text-decoration: none;
-  color: black;
-}
-
-.signup-container .signup-frame {
-  position: relative;
-  width: 420px;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  border-radius: 10px;
-  background: #ffffff;
-  padding: 25px;
-}
-
-.signup-container .signup-frame .sign-input-frame {
-  position: relative;
-  width: 100%;
-  height: auto;
-  display: flex;
-  flex-direction: row;
-}
-
-.signup-container .sign-input-frame .sign-up-frame {
-  position: relative;
-  margin-top: 15px;
-  width: 49%;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.signup-container .sign-up-frame label {
-  margin-bottom: 0px;
-  font-family: "Poppins";
-  font-style: normal;
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 18px;
-}
-
-.signup-container .sign-up-frame input {
-  position: relative;
-  margin-top: 10px;
-  padding-left: 20px;
-  width: 100%;
-  height: 55px;
-  background: #f6f5f5;
-  border: 1px solid #dddddd;
-  border-radius: 8px;
-}
-
-.signup-container .media-frame {
-  position: relative;
-  margin-top: 15px;
-  width: 100%;
-  height: 250px;
-  display: flex;
-  flex-direction: row;
   justify-content: space-between;
+  gap: 18px;
 }
 
-.signup-container .media-frame .upload-img-frame {
-  position: relative;
-  width: 275px;
-  height: 93%;
-  display: flex;
-  border-radius: 15px;
-}
-
-.signup-container .upload-img-frame .delete-img {
-  position: absolute;
-  width: 37px;
-  height: 37px;
-  right: 5%;
-  top: 5%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #ffffff;
-  box-shadow: 0px 6px 15px rgba(64, 79, 104, 0.05);
-  border-radius: 8px;
-}
-
-.signup-container .media-frame .upload-container {
-  position: relative;
-  margin-left: 30px;
-  width: 75%;
-  height: 100%;
+.sign-up-frame {
+  width: 50%;
   display: flex;
   flex-direction: column;
+  margin-top: 18px;
 }
 
-.signup-container .media-text {
-  font-family: "GT Walsheim Pro";
-  font-style: normal;
-  font-weight: 500;
-  font-size: 16px;
-  line-height: 18px;
-  color: #140342;
+.sign-up-frame label,
+.media-text {
+  color: #364034;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.signup-container .file-box input[type="file"] {
+.sign-up-frame input {
+  height: 48px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border: 1px solid var(--venturo-line);
+  border-radius: 6px;
+  background: #fafbf8;
+}
+
+.signup-input-frame {
+  margin-top: 26px;
+}
+
+.media-frame {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px;
+  border: 1px dashed #b9bead;
+  border-radius: 8px;
+  background: #fafbf8;
+}
+
+.upload-img-frame {
+  width: 112px;
+  height: 112px;
+  padding: 31px;
+  border-radius: 8px;
+  background: #e9ece3;
+  object-fit: contain;
+}
+
+.upload-container {
+  flex: 1;
+}
+
+.file-box {
+  display: flex;
+  margin-top: 13px;
+}
+
+.file-box input[type="file"] {
   position: absolute;
   width: 1px;
   height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+}
+
+.upload-name {
+  width: 100%;
+  min-width: 0;
+  height: 45px;
+  padding: 0 12px;
+  border: 1px solid var(--venturo-line);
+  border-radius: 6px 0 0 6px;
+  background: #fff;
+  color: #697166;
+}
+
+.file-input-label {
+  min-width: 116px;
+  height: 45px;
+  display: grid;
+  place-items: center;
+  border-radius: 0 6px 6px 0;
+  background: var(--venturo-evergreen);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.thumbnail-desc {
+  margin: 12px 0 0;
+}
+
+.signup-btn {
+  width: 100%;
+  height: 51px;
+  margin-top: 28px;
   border: 0;
+  border-radius: 6px;
+  background: var(--venturo-olive);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 750;
 }
 
-.signup-container .file-box label {
-  margin-bottom: 0px;
-  width: 138px;
-  height: 55px;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #6a7a99;
-  border-radius: 0px 8px 8px 0px;
-  font-family: "GT Walsheim Pro";
-  font-style: normal;
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 26px;
-  color: #ffffff;
+.signup-btn:hover {
+  background: var(--venturo-olive-dark);
+  color: #fff;
 }
 
-.signup-container .file-box .upload-name {
-  position: relative;
-  padding: 20px;
-  width: 85%;
-  height: 55px;
-  display: flex;
-  background: #ffffff;
-  border: 1px solid #dddddd;
-  border-radius: 8px 0px 0px 8px;
-}
+@media (max-width: 620px) {
+  .signup-frame {
+    padding: 30px 24px;
+  }
 
-.signup-container .thumbnail-desc {
-  margin-top: 25px;
-  font-family: "GT Walsheim Pro";
-  font-style: normal;
-  font-weight: 400;
-  font-size: 15px;
-  line-height: 26px;
-  color: #4f547b;
-}
+  .sign-input-frame,
+  .media-frame {
+    flex-direction: column;
+  }
 
-/* Background animation */
-@-webkit-keyframes gradient {
-  0% {
-    background-position: 0% 50%;
+  .sign-up-frame {
+    width: 100%;
   }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
 
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
+  .media-frame {
+    align-items: stretch;
   }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
+
+  .upload-img-frame {
+    align-self: center;
   }
 }

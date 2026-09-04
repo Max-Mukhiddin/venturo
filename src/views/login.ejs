@@ -3,43 +3,43 @@
 <link rel="stylesheet" type="text/css" href="/css/login.css" />
 
 <body>
-  <form class="login-container" action="/admin/login" METHOD="POST">
+  <main class="auth-page">
+  <form class="login-container" action="/admin/login" method="POST">
     <div class="login-frame">
+      <div class="auth-brand"><span>V</span> VENTURO <small>ADMIN</small></div>
       <div class="login-top">
-        <span>Enter</span>
-        <div>Go back <a href="/admin" style="color: #6440fb">Home</a></div>
-        <p>
-          Not registered yet?
-          <a href="/admin/signup" style="color: #6440fb">Signup</a>
-        </p>
+        <span>Admin Login</span>
+        <p>Sign in to manage the Venturo catalog and member workspace.</p>
       </div>
       <div class="login-input-frame">
         <div class="login-input-container">
-          <label>Store *</label>
+          <label>Admin username</label>
           <input
             type="text"
             name="memberNick"
             class="member-nick"
-            placeholder="Username"
+            placeholder="Enter your username"
             value=""
             required
           />
         </div>
         <div class="login-input-container">
-          <label>Password *</label>
+          <label>Password</label>
           <input
             type="password"
             name="memberPassword"
             class="member-password"
-            placeholder="Password"
+            placeholder="Enter your password"
             value=""
             required
           />
         </div>
       </div>
-      <button class="login-btn btn" name="login" type="submit">Login</button>
+      <button class="login-btn btn" name="login" type="submit">Sign in</button>
+      <div class="auth-footer">Need the initial administrator? <a href="/admin/signup">Create admin account</a></div>
     </div>
   </form>
+  </main>
 </body>
 
 <%- include('includes/footer') %>

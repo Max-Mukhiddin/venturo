@@ -49,7 +49,7 @@ function validateSignupForm() {
     ? $(".member-image").get(0).files[0].name
     : null;
   if (!memberImage) {
-    alert("Please insert store image!");
+    alert("Please upload a profile image!");
     return false;
   }
 

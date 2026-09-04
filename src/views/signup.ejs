@@ -3,21 +3,23 @@
 <link rel="stylesheet" type="text/css" href="/css/signup.css" />
 
 <body>
+  <main class="auth-page">
   <div class="signup-container">
     <form onsubmit="return validateSignupForm()" action="/admin/signup" method="POST" enctype="multipart/form-data">
-      <div class="signup-frame" style="width: 650px">
+      <div class="signup-frame">
+        <div class="auth-brand"><span>V</span> VENTURO <small>ADMIN</small></div>
         <div class="signup-top">
-          <span>Signup</span>
-          <div>Go back <a href="/admin" style="color: #6440fb">Home</a></div>
+          <span>Create Admin Account</span>
+          <div>Create the first active Venturo administrator.</div>
           <p>
-            Already signed up?
-            <a href="/admin/login" style="color: #6440fb">Login</a>
+            Already have an account?
+            <a href="/admin/login">Login</a>
           </p>
         </div>
 
         <div class="sign-input-frame" style="justify-content: space-between">
           <div class="sign-up-frame">
-            <label>Store *</label>
+            <label>Admin username *</label>
             <input
               type="text"
               name="memberNick"
@@ -27,7 +29,7 @@
             />
           </div>
           <div class="sign-up-frame">
-            <label>Phone *</label>
+            <label>Phone number *</label>
             <input
               type="text"
               name="memberPhone"
@@ -62,9 +64,9 @@
 
         <div class="signup-input-frame">
           <div class="media-frame">
-            <img class="upload-img-frame" src="/img/default.jpeg" />
+            <img class="upload-img-frame" src="/img/upload.svg" alt="Profile image preview" />
             <div class="upload-container">
-              <span class="media-text">Product image</span>
+              <span class="media-text">Profile image *</span>
               <div
                 class="file-box bs3-primary preview-image"
                 style="margin-top: 25px; display: flex"
@@ -85,9 +87,8 @@
                 />
               </div>
               <p class="thumbnail-desc">
-                Please upload store image.<br />
-                Attention only:.jpg, .jpeg, or .png. <br />
-                formats allowed!
+                Upload a profile image for this administrator.<br />
+                JPG, JPEG, PNG, or WEBP formats are supported.
               </p>
             </div>
           </div>
@@ -96,11 +97,12 @@
         <input name="memberType" value="ADMIN" hidden />
 
         <button class="signup-btn btn" name="signup" type="submit">
-          Signup
+          Create admin account
         </button>
       </div>
     </form>
   </div>
+  </main>
 
 
 
