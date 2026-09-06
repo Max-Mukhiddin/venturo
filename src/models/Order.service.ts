@@ -12,17 +12,26 @@ import {
 } from "../libs/types/order";
 import orderModel from "../schema/Order.model";
 import orderItemModel from "../schema/OrderItem.model";
-import mongoose, { ObjectId } from "mongoose";
+import ProductModel from "../schema/Product.model";
+import mongoose, { ClientSession, ObjectId } from "mongoose";
 import MemberService from "./Member.service";
+import { ProductStatus } from "../libs/enums/product.enum";
+
+interface NormalizedOrderItem {
+  productId: ObjectId;
+  itemQuantity: number;
+}
 
 class OrderService {
   private readonly orderModel;
   private readonly orderItemModel;
+  private readonly productModel;
   private readonly memberService;
 
   constructor() {
     this.orderModel = orderModel;
     this.orderItemModel = orderItemModel;
+    this.productModel = ProductModel;
     this.memberService = new MemberService();
   }
 
@@ -37,44 +46,123 @@ class OrderService {
     if (!Object.values(PaymentMethod).includes(orderPaymentMethod)) {
       throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
     }
-    const amount = items.reduce((accumulator: number, item: OrderItemInput) => {
-      return accumulator + item.itemPrice * item.itemQuantity;
-    }, 0);
-    const delivery = amount < 100 ? 5 : 0;
+
+    const normalizedItems = this.normalizeOrderItems(items);
+    const session = await mongoose.startSession();
     try {
-      const newOrder: Order = await this.orderModel.create({
-        orderTotal: amount + delivery,
-        orderDelivery: delivery,
-        memberId: memberId,
-        shippingAddress: shippingAddress,
-        orderPaymentMethod,
+      let newOrder: Order | undefined;
+
+      await session.withTransaction(async () => {
+        const orderItems = await this.reserveStockAndPrice(
+          normalizedItems,
+          session
+        );
+        const subtotal = orderItems.reduce(
+          (total, item) => total + item.itemPrice * item.itemQuantity,
+          0
+        );
+        const orderDelivery = subtotal < 100 ? 5 : 0;
+
+        const createdOrders = await this.orderModel.create(
+          [
+            {
+              orderTotal: subtotal + orderDelivery,
+              orderDelivery,
+              memberId,
+              shippingAddress,
+              orderPaymentMethod,
+            },
+          ],
+          { session }
+        );
+        newOrder = createdOrders[0] as Order;
+
+        await this.orderItemModel.insertMany(
+          orderItems.map((item) => ({
+            ...item,
+            orderId: newOrder!._id,
+          })),
+          { session }
+        );
       });
 
-      console.log("orderId", newOrder._id);
-      const orderId = newOrder._id;
-      await this.recordOrderItem(orderId, items);
-
+      if (!newOrder) throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
       return newOrder;
     } catch (err) {
       console.log("Error, model:createOrder:", err);
+      if (err instanceof Errors) throw err;
       throw new Errors(HttpCode.BAD_REQUEST, Message.CREATE_FAILED);
+    } finally {
+      await session.endSession();
     }
   }
 
-  private async recordOrderItem(
-    orderId: ObjectId,
-    input: OrderItemInput[]
-  ): Promise<void> {
-    const promisedList = input.map(async (item: OrderItemInput) => {
-      item.orderId = orderId;
-      item.productId = shapeIntoMongooseIdObjectId(item.productId);
-      await this.orderItemModel.create(item);
-      return "INSERTED";
-    });
+  private normalizeOrderItems(input: OrderItemInput[]): NormalizedOrderItem[] {
+    if (!Array.isArray(input) || input.length === 0) {
+      throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_ORDER_ITEM);
+    }
 
-    console.log("promisedList:", promisedList);
-    const orderItemState = await Promise.all(promisedList);
-    console.log("orderItemState", orderItemState);
+    const quantities = new Map<string, NormalizedOrderItem>();
+    for (const item of input) {
+      if (
+        !item ||
+        !Number.isInteger(item.itemQuantity) ||
+        item.itemQuantity <= 0 ||
+        !mongoose.isValidObjectId(item.productId)
+      ) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.INVALID_ORDER_ITEM);
+      }
+
+      const productId = shapeIntoMongooseIdObjectId(item.productId);
+      const existing = quantities.get(productId.toString());
+      if (existing) {
+        existing.itemQuantity += item.itemQuantity;
+      } else {
+        quantities.set(productId.toString(), {
+          productId,
+          itemQuantity: item.itemQuantity,
+        });
+      }
+    }
+
+    return [...quantities.values()];
+  }
+
+  private async reserveStockAndPrice(
+    items: NormalizedOrderItem[],
+    session: ClientSession
+  ) {
+    const orderItems: Array<{
+      productId: ObjectId;
+      itemQuantity: number;
+      itemPrice: number;
+    }> = [];
+
+    for (const item of items) {
+      const product = await this.productModel
+        .findOneAndUpdate(
+          {
+            _id: item.productId,
+            productStatus: ProductStatus.PROCESS,
+            productLeftCount: { $gte: item.itemQuantity },
+          },
+          { $inc: { productLeftCount: -item.itemQuantity } },
+          { new: true, session }
+        )
+        .exec();
+
+      if (!product) {
+        throw new Errors(HttpCode.BAD_REQUEST, Message.PRODUCT_UNAVAILABLE);
+      }
+
+      orderItems.push({
+        productId: item.productId,
+        itemQuantity: item.itemQuantity,
+        itemPrice: product.productPrice,
+      });
+    }
+
+    return orderItems;
   }
 
   public async getMyOrders(

@@ -22,6 +22,8 @@ export enum Message {
   WRONG_PASSWORD = "Wrong password entered, please try again!",
   NOT_AUTHENTICATED = "You are not authenticated, Please login first!",
   INVALID_ORDER_STATUS = "Invalid order status filter value!",
+  INVALID_ORDER_ITEM = "Order items must use a valid product and positive whole quantity!",
+  PRODUCT_UNAVAILABLE = "Product is unavailable or has insufficient stock!",
 }
 
 class Errors extends Error {

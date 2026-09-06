@@ -37,8 +37,9 @@ export interface Order {
 
 export interface OrderItemInput {
   itemQuantity: number;
-  itemPrice: number;
-  productId: ObjectId;
+  // Accepted for legacy clients but never used to calculate order prices.
+  itemPrice?: number;
+  productId: ObjectId | string;
   orderId?: ObjectId;
 }
 
