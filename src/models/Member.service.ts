@@ -22,13 +22,19 @@ class MemberService {
 
   /** SPA */
 
-  public async getRestaurant(): Promise<Member> {
+  public async getRestaurant(): Promise<
+    Pick<Member, "_id" | "memberNick" | "memberImage" | "memberDesc">
+  > {
     const result = await this.memberModel
       .findOne({ memberType: MemberType.ADMIN })
+      .select("_id memberNick memberImage memberDesc")
       .lean()
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result;
+    return result as Pick<
+      Member,
+      "_id" | "memberNick" | "memberImage" | "memberDesc"
+    >;
   }
 
   public async signup(input: PublicSignupInput): Promise<Member> {
@@ -146,17 +152,20 @@ class MemberService {
     }
   }
 
-  public async getTopUsers(): Promise<Member[]> {
+  public async getTopUsers(): Promise<
+    Array<Pick<Member, "_id" | "memberNick" | "memberImage">>
+  > {
     const result = await this.memberModel
       .find({
         memberStatus: MemberStatus.ACTIVE,
         memberPoints: { $gte: 1 },
       })
+      .select("_id memberNick memberImage")
       .sort({ memberPoints: -1 })
       .limit(4)
       .exec();
     if (!result) throw new Errors(HttpCode.NOT_FOUND, Message.NO_DATA_FOUND);
-    return result;
+    return result as Array<Pick<Member, "_id" | "memberNick" | "memberImage">>;
   }
 
   public async addUserPoint(member: Member, point: number): Promise<Member> {

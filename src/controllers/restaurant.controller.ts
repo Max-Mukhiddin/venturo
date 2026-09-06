@@ -9,6 +9,19 @@ import Errors, { HttpCode, Message } from "../libs/Errors";
 const memberService = new MemberService();
 
 const restaurantController: T = {};
+const denyAdminAccess = (req: AdminRequest, res: Response) => {
+  const redirectToLogin = () =>
+    res.send(
+      `<script> alert("${Message.NOT_AUTHENTICATED}"); window.location.replace('/admin/login'); </script>`
+    );
+
+  if (req.session) {
+    req.session.destroy(redirectToLogin);
+  } else {
+    redirectToLogin();
+  }
+};
+
 restaurantController.goHome = (req: Request, res: Response) => {
   try {
     console.log("goHome");
@@ -165,19 +178,30 @@ restaurantController.checkAuthSession = async (
   }
 };
 
-restaurantController.verifyRestaurant = (
+restaurantController.verifyRestaurant = async (
   req: AdminRequest,
   res: Response,
   next: NextFunction
 ) => {
-  if (req.session?.member?.memberType === MemberType.ADMIN) {
-    req.member = req.session.member;
+  try {
+    const sessionMember = req.session?.member;
+    if (!sessionMember?._id) {
+      denyAdminAccess(req, res);
+      return;
+    }
+
+    const member = await memberService.getActiveMember(sessionMember._id);
+    if (member.memberType !== MemberType.ADMIN) {
+      denyAdminAccess(req, res);
+      return;
+    }
+
+    req.member = member;
+    req.session.member = member;
     next();
-  } else {
-    const message = Message.NOT_AUTHENTICATED;
-    res.send(
-      `<script> alert("${message}"); window.location.replace('/admin/login'); </script>`
-    );
+  } catch (err) {
+    console.log("Error, verifyRestaurant:", err);
+    denyAdminAccess(req, res);
   }
 };
 
