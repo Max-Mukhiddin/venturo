@@ -3142,3 +3142,64 @@ and non-public product rejection, hidden-product omission, remove, repeated
 remove, and unauthenticated access denial. Temporary Wishlist rows used by the
 test were removed afterward. `npx tsc --noEmit` and `git diff --check` passed;
 `npm run build` was run before commit and generated artifacts were removed.
+
+## Session — Wishlist Frontend
+
+Implemented the Wishlist page from the HikMali empty-state reference (Figma
+node `2470:930`): it uses the existing Venturo breadcrumb, benefits strip, and
+footer around the centered outlined empty panel and Shop return action. The
+populated layout intentionally uses real Venturo product imagery, names, prices,
+stock counts, cart integration, and product-detail navigation because the Figma
+file provides no populated Wishlist frame.
+
+The page calls `GET /wishlist/all` only for authenticated members and removes
+items through `POST /wishlist/remove` with `{ productId }`; it provides
+loading, truthful error/retry, signed-out, and empty states. It does not make
+unauthenticated request loops. Stock-empty products cannot be added to the
+existing basket. Responsive empty-state checks covered 1920, 1536, 1440, 900,
+and 390px with no horizontal overflow; authenticated populated/remove/cart
+runtime verification was unavailable because the local browser session was
+signed out. `npx tsc --noEmit`, `npm run build`, and `git diff --check` passed
+(the build retains only pre-existing app-wide warnings).
+
+## Session — My Account Frontend
+
+Implemented `/my-account` using HikMali node `2470:464` as a visual-language
+reference for the breadcrumb hero, two-column form rhythm, borders, typography,
+and button treatment. That Figma frame is Login/Register rather than a signed-in
+profile, so unsupported registration and password controls were intentionally
+omitted.
+
+Authenticated accounts load through `GET /member/detail` and update only
+`memberNick`, `memberPhone`, `memberAddress`, `memberDesc`, and optional
+multipart `memberImage` through `POST /member/update`. The page displays type
+and status read-only, never renders or submits password or points, provides
+avatar preview/upload, and retains the shared login UX without unauthenticated
+profile requests. Signed-out direct-route rendering was browser-verified;
+responsive behavior at 1920, 1536, 1440, 900, and 390px was checked from the
+scoped fluid/grid CSS because this browser session could not change viewport
+size. Authenticated runtime update/image verification remains unavailable while
+the local session is signed out. `npx tsc --noEmit`, `npm run build`, and
+`git diff --check` passed; the production build has only pre-existing app-wide
+warnings.
+
+## Session — Order Track Frontend
+
+Implemented `/order-track` from HikMali node `2470:760` as a visual-language
+reference for the breadcrumb hero and centered 678px control geometry. The
+source design's public Order ID/Billing Email tracking form was intentionally
+replaced with an authenticated owned-order selector: Venturo has no tracking
+number, carrier, public lookup, or shipment timeline.
+
+The page uses `GET /order/all`, `GET /order/:id`, and `POST /order/update` to
+show real order status, dates, totals, delivery, shipping address, historical
+items, and safely joined product names/images. Product matches use `productId`,
+with an item-price/quantity and product-ID fallback when a joined product is
+missing. Members can only continue `PENDING` orders to `PROCESS` or cancel
+`PENDING`/`PROCESS` orders; it exposes no `SHIPPED` or `FINISH` action. Loading,
+error/retry, empty, and signed-out states are included. Signed-out direct-route
+rendering was browser-verified; responsive behavior at 1920, 1536, 1440, 900,
+and 390px was checked from scoped responsive CSS because browser viewport
+controls and an authenticated session were unavailable. `npx tsc --noEmit`,
+`npm run build`, and `git diff --check` passed; build warnings are pre-existing
+and app-wide.
