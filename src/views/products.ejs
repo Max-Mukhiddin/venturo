@@ -22,6 +22,7 @@
                 <th scope="col">Product Price</th>
                 <th scope="col">Inventory</th>
                 <th scope="col">Status</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
 
@@ -40,10 +41,20 @@
                   <option value="DELETE" <%= value.productStatus === 'DELETE' ? 'selected': '' %> >DELETE</option>
                 </select>
               </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn product-edit-button"
+                  data-product-id="<%= value._id %>"
+                >
+                  Edit
+                </button>
+              </td>
             </tbody>
               <% }) %>
           
           </table>
+          <script id="product-edit-data" type="application/json"><%- JSON.stringify(products).replace(/</g, "\\u003c") %></script>
           <div
             class="long-input"
             style="align-items: flex-end; margin-bottom: 25px"
@@ -194,6 +205,77 @@
             </button>
           </div>
         </form>
+
+        <div class="product-edit-modal" id="product-edit-modal" hidden>
+          <div class="product-edit-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="product-edit-title">
+            <div class="product-edit-modal__header">
+              <div>
+                <span class="product-edit-modal__eyebrow">PRODUCT INFORMATION</span>
+                <h2 id="product-edit-title">Edit Product</h2>
+              </div>
+              <button type="button" class="product-edit-modal__close" id="product-edit-cancel" aria-label="Close edit product form">&times;</button>
+            </div>
+
+            <form id="product-edit-form" novalidate>
+              <p class="product-edit-modal__notice">Images are unchanged in this editor.</p>
+              <div class="long-input">
+                <label for="edit-product-name">Product Name</label>
+                <input id="edit-product-name" type="text" required />
+              </div>
+              <div class="half-input-frame">
+                <div class="half-input">
+                  <label for="edit-product-price">Product Price</label>
+                  <input id="edit-product-price" type="number" min="0" step="any" required />
+                </div>
+                <div class="half-input">
+                  <label for="edit-product-left-count">Inventory</label>
+                  <input id="edit-product-left-count" type="number" min="0" step="any" required />
+                </div>
+              </div>
+              <div class="half-input-frame">
+                <div class="half-input">
+                  <label for="edit-product-collection">Product Type</label>
+                  <select id="edit-product-collection" required>
+                    <option value="CLIMBING">Climbing</option>
+                    <option value="CAMPING">Camping</option>
+                    <option value="HIKING">Hiking</option>
+                    <option value="TREKKING">Trekking</option>
+                    <option value="CYCLING">Cycling</option>
+                    <option value="APPAREL">Apparel</option>
+                    <option value="FOOTWEAR">Footwear</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                <div class="half-input">
+                  <label for="edit-product-size">Size</label>
+                  <select id="edit-product-size">
+                    <option value="">No size</option>
+                    <option value="SMALL">Small</option>
+                    <option value="NORMAL">Normal</option>
+                    <option value="LARGE">Large</option>
+                    <option value="SET">Set</option>
+                  </select>
+                </div>
+              </div>
+              <div class="long-input">
+                <label for="edit-product-desc">Product Description</label>
+                <textarea id="edit-product-desc" required></textarea>
+              </div>
+              <div class="long-input">
+                <label for="edit-product-status">Status</label>
+                <select id="edit-product-status" required>
+                  <option value="PAUSE">PAUSE</option>
+                  <option value="PROCESS">PROCESS</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+              </div>
+              <div class="operation-buttons">
+                <button type="button" class="btn btn-danger" id="edit-product-close">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="edit-product-save">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
