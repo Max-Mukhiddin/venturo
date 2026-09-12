@@ -14,20 +14,6 @@ import ConnectMongoDB from "connect-mongodb-session";
 import { T } from "./libs/types/common";
 
 const isProduction = process.env.NODE_ENV === "production";
-const frontendUrl = process.env.FRONTEND_URL;
-
-if (isProduction && !frontendUrl) {
-  throw new Error("FRONTEND_URL must be configured in production.");
-}
-
-let allowedOrigins = ["http://localhost:3000"];
-if (isProduction) {
-  const frontendOrigin = new URL(frontendUrl as string);
-  if (frontendOrigin.protocol !== "https:") {
-    throw new Error("FRONTEND_URL must use HTTPS in production.");
-  }
-  allowedOrigins = [frontendOrigin.origin];
-}
 
 const MongoDBStore = ConnectMongoDB(session);
 const store = new MongoDBStore({
@@ -37,24 +23,15 @@ const store = new MongoDBStore({
 
 /** 1-ENTERANCE **/
 const app = express();
+// Compiled code lives in dist while EJS and browser assets remain in src.
+const sourceDirectory =
+  path.basename(__dirname) === "dist" ? path.resolve(__dirname, "../src") : __dirname;
 if (isProduction) app.set("trust proxy", 1);
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(sourceDirectory, "public")));
 app.use("/uploads", express.static( "./uploads"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(
-  cors({
-    credentials: true,
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error("Origin is not allowed by CORS policy."));
-    },
-  })
-);
+app.use(cors({ credentials: true, origin: true }));
 app.use(cookieParser());
 app.use(morgan(MORGAN_FORMAT));
 
@@ -66,7 +43,7 @@ app.use(
       maxAge: 1000 * 3600 * 6, // 6h
       httpOnly: true,
       sameSite: "lax",
-      secure: isProduction,
+      secure: false,
     },
     store: store,
     resave: true,
@@ -81,7 +58,7 @@ app.use(function (req, res, next) {
 });
 
 /** 3-VIEWS **/
-app.set("views", path.join(__dirname, "views"));
+app.set("views", path.join(sourceDirectory, "views"));
 app.set("view engine", "ejs");
 
 /** 4-ROUTERS **/
